@@ -8,6 +8,11 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
   const { userId } = await params;
   const supabase = await createClient();
 
+  const {
+    data: { user: viewer },
+  } = await supabase.auth.getUser();
+  const viewerIsOwner = viewer?.id === userId;
+
   const { data: rows } = await supabase
     .from('inventory')
     .select('id, case_id, item_id, cashback_value, obtained_at')
@@ -37,13 +42,10 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
     | null
   )[];
 
-  const itemsById = new Map(allItems.map((item) => [item.inventoryId, item]));
-  const showcaseItems = slots.map((id) => (id ? (itemsById.get(id) ?? null) : null));
-
   return (
-    <main>
-      <h1>Профиль</h1>
-      <ProfileTabs showcaseItems={showcaseItems} allItems={allItems} />
+    <main className="mx-auto flex max-w-[1140px] flex-col gap-6 px-10 py-10">
+      <h1 className="font-display text-display-lg uppercase">Профиль</h1>
+      <ProfileTabs slots={slots} allItems={allItems} viewerIsOwner={viewerIsOwner} />
     </main>
   );
 }
