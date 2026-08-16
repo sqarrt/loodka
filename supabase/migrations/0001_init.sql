@@ -1,3 +1,5 @@
+grant usage on schema public to anon, authenticated, service_role;
+
 create table public.profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
   balance integer not null default 0,
@@ -6,6 +8,7 @@ create table public.profiles (
 );
 
 alter table public.profiles enable row level security;
+grant select, insert, update on public.profiles to anon, authenticated, service_role;
 
 create policy "profiles_select_own" on public.profiles
   for select using (auth.uid() = user_id);
@@ -26,6 +29,7 @@ create table public.cases (
 );
 
 alter table public.cases enable row level security;
+grant select, insert, update, delete on public.cases to anon, authenticated, service_role;
 
 create policy "cases_select_all" on public.cases
   for select using (true);
@@ -49,6 +53,7 @@ create table public.inventory (
 );
 
 alter table public.inventory enable row level security;
+grant select, insert, delete on public.inventory to anon, authenticated, service_role;
 
 create policy "inventory_select_all" on public.inventory
   for select using (true);
@@ -65,6 +70,7 @@ create table public.profile_showcases (
 );
 
 alter table public.profile_showcases enable row level security;
+grant select, insert, update on public.profile_showcases to anon, authenticated, service_role;
 
 create policy "profile_showcases_select_all" on public.profile_showcases
   for select using (true);
@@ -83,6 +89,7 @@ create table public.platform_config (
 );
 
 alter table public.platform_config enable row level security;
+grant select on public.platform_config to anon, authenticated, service_role;
 
 create policy "platform_config_select_all" on public.platform_config
   for select using (true);
