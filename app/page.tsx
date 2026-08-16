@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
 import { claimDailyBonus } from '@/app/actions/claim-daily-bonus';
-import { CurrencyIcon } from '@/components/CurrencyIcon';
 import { GoogleLoginButton } from '@/components/GoogleLoginButton';
 
 export default async function HomePage() {
@@ -28,7 +27,7 @@ export default async function HomePage() {
     );
   }
 
-  const profile = await claimDailyBonus();
+  await claimDailyBonus();
   const displayName = user.email?.split('@')[0] ?? 'игрок';
 
   const links = [
@@ -40,18 +39,13 @@ export default async function HomePage() {
 
   return (
     <main className="mx-auto flex max-w-[1140px] flex-col gap-6 px-10 py-14">
-      <div className="flex items-center justify-between border-b border-line-soft pb-6">
-        <div className="flex flex-col gap-1">
-          <span className="font-mono text-caps uppercase text-text-muted">
-            с возвращением
-          </span>
-          <h1 className="font-display text-display-lg uppercase">
-            Привет, {displayName}
-          </h1>
-        </div>
-        <div className="flex items-center gap-3 rounded-full border border-line bg-surface-card px-3 py-2 font-mono text-label font-bold">
-          <CurrencyIcon size={12} /> {profile?.balance ?? 0}
-        </div>
+      <div className="flex flex-col gap-1 border-b border-line-soft pb-6">
+        <span className="font-mono text-caps uppercase text-text-muted">
+          с возвращением
+        </span>
+        <h1 className="font-display text-display-lg uppercase">
+          Привет, {displayName}
+        </h1>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -71,12 +65,6 @@ export default async function HomePage() {
           </a>
         ))}
       </div>
-
-      <form action="/auth/signout" method="post">
-        <button className="font-mono text-caps uppercase text-text-muted hover:text-text-primary">
-          выйти
-        </button>
-      </form>
     </main>
   );
 }

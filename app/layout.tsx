@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Unbounded, Manrope, JetBrains_Mono } from "next/font/google";
+import { Header } from "@/components/Header";
 import "./globals.css";
 
 const unbounded = Unbounded({
@@ -30,7 +31,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="ru"
       className={`${unbounded.variable} ${manrope.variable} ${jetbrainsMono.variable}`}
     >
-      <body className="font-sans">{children}</body>
+      <body className="font-sans">
+        <Header />
+        {children}
+      </body>
     </html>
   );
 }
