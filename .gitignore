@@ -3,6 +3,9 @@
 # internal docs (specs/plans) — not published to the repo
 /docs
 
+# design exports (raw Claude Design output) — not published to the repo
+/design
+
 # dependencies
 /node_modules
 /.pnp
