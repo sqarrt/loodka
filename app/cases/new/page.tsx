@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState, type ChangeEvent } from 'react';
 import { createCase } from '@/app/actions/create-case';
 import { Button } from '@/components/Button';
 import { CurrencyIcon } from '@/components/CurrencyIcon';
@@ -12,6 +12,13 @@ const inputClass =
 
 export default function NewCasePage() {
   const [state, formAction] = useActionState(createCase, null);
+  const [previews, setPreviews] = useState<Record<number, string>>({});
+
+  const handleFileChange = (i: number) => (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPreviews((prev) => ({ ...prev, [i]: URL.createObjectURL(file) }));
+  };
 
   return (
     <main className="mx-auto flex max-w-[1140px] flex-col gap-6 px-10 py-10">
@@ -57,13 +64,19 @@ export default function NewCasePage() {
               key={i}
               className="flex flex-col gap-2 rounded-lg border border-line bg-surface-card p-3 sm:grid sm:grid-cols-[84px_1fr_110px] sm:items-center"
             >
-              <label className="relative flex h-[62px] w-[84px] cursor-pointer items-center justify-center rounded-md border border-dashed border-line-strong bg-inset text-center font-mono text-[9px] leading-tight text-text-dim hover:border-gold hover:text-gold">
-                фото
+              <label className="relative flex h-[62px] w-[84px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-md border border-dashed border-line-strong bg-inset text-center font-mono text-[9px] leading-tight text-text-dim hover:border-gold hover:text-gold">
+                {previews[i] ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={previews[i]} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  'фото'
+                )}
                 <input
                   name="itemImage"
                   type="file"
                   accept="image/*"
                   required
+                  onChange={handleFileChange(i)}
                   className="absolute inset-0 cursor-pointer opacity-0"
                 />
               </label>
