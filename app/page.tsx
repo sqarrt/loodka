@@ -22,6 +22,9 @@ export default async function HomePage() {
     <main>
       <p>Привет, {user.email}</p>
       <p>Баланс: {profile?.balance ?? 0} лудок</p>
+      <p>
+        <a href="/cases/new">Создать кейс</a>
+      </p>
       <form action="/auth/signout" method="post">
         <button type="submit">Выйти</button>
       </form>
