@@ -12,6 +12,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
     data: { user: viewer },
   } = await supabase.auth.getUser();
   const viewerIsOwner = viewer?.id === userId;
+  const displayName = viewerIsOwner ? (viewer?.email?.split('@')[0] ?? 'игрок') : null;
 
   const { data: rows } = await supabase
     .from('inventory')
@@ -44,7 +45,10 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
 
   return (
     <main className="mx-auto flex max-w-[1140px] flex-col gap-6 px-10 py-10">
-      <h1 className="font-display text-display-lg uppercase">Профиль</h1>
+      <div className="flex flex-col gap-1">
+        <span className="font-mono text-caps uppercase text-text-muted">профиль</span>
+        <h1 className="font-display text-display-lg uppercase">{displayName ?? 'Профиль'}</h1>
+      </div>
       <ProfileTabs slots={slots} allItems={allItems} viewerIsOwner={viewerIsOwner} />
     </main>
   );

@@ -48,22 +48,28 @@ export function ProfileTabs({
               <div
                 key={i}
                 onClick={viewerIsOwner ? () => setPickerSlot(i) : undefined}
-                className={`flex min-h-[172px] flex-col overflow-hidden rounded-md border ${
+                className={`flex flex-col overflow-hidden rounded-md border ${
                   item ? 'border-line bg-surface-card' : 'border-dashed border-line-strong bg-inset'
                 } ${viewerIsOwner ? 'cursor-pointer hover:border-gold' : ''}`}
               >
                 {item ? (
                   <>
-                    {item.imageUrl && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={item.imageUrl} alt={item.name} className="h-26 w-full object-cover" />
-                    )}
-                    <div className="flex-1 p-2.5">
-                      <span className="text-caps font-semibold">{item.name}</span>
+                    <div className="flex aspect-square w-full items-center justify-center bg-surface-raised">
+                      {item.imageUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          className="h-full w-full object-contain p-2"
+                        />
+                      )}
+                    </div>
+                    <div className="px-2.5 py-2">
+                      <span className="truncate text-caps font-semibold">{item.name}</span>
                     </div>
                   </>
                 ) : (
-                  <div className="flex flex-1 flex-col items-center justify-center gap-2">
+                  <div className="flex aspect-square w-full flex-col items-center justify-center gap-2">
                     <span className="h-3.5 w-3.5 rotate-45 rounded-[2px] border border-line-strong" />
                     <span className="font-mono text-caps text-text-dim">
                       слот {String(i + 1).padStart(2, '0')}
@@ -90,11 +96,6 @@ export function ProfileTabs({
               <span className="text-label font-semibold">{item.name}</span>
             </div>
           ))}
-          {!viewerIsOwner && (
-            <span className="font-mono text-caps text-text-dim">
-              read-only: у гостя нет кнопок кэшбека и слотов
-            </span>
-          )}
         </div>
       )}
 
