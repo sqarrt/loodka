@@ -71,10 +71,7 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
       />
 
       <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-heading uppercase">Что может выпасть</h2>
-          <span className="font-mono text-caps text-text-muted">сумма шансов 100%</span>
-        </div>
+        <h2 className="font-display text-heading uppercase">Что может выпасть</h2>
         <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-6">
           {itemsWithOdds.map((item) => (
             <ItemCard
