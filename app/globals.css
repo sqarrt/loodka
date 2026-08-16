@@ -69,11 +69,10 @@ body {
   box-sizing: border-box;
 }
 
-a {
-  color: var(--color-gold);
-}
-a:hover {
-  color: var(--color-gold-hover);
+@layer base {
+  a {
+    color: inherit;
+  }
 }
 
 ::selection {

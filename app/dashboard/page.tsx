@@ -33,10 +33,7 @@ export default async function DashboardPage() {
             key={c.id}
             className="flex flex-col gap-3 rounded-lg border border-line bg-surface-card p-4 sm:grid sm:grid-cols-[1fr_110px_90px_auto] sm:items-center"
           >
-            <div className="flex flex-col gap-1">
-              <span className="font-display text-label uppercase">{c.title}</span>
-              <span className="font-mono text-caps text-text-muted">/case/{c.id}</span>
-            </div>
+            <span className="font-display text-label uppercase">{c.title}</span>
             <span className="font-mono text-mono-num text-text-secondary">
               {(c.items as unknown[]).length} предметов
             </span>
