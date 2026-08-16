@@ -4,7 +4,7 @@ type Variant = 'cta' | 'demo' | 'disabled' | 'loading';
 
 const VARIANT_CLASSES: Record<Variant, string> = {
   cta: 'bg-gold text-bg hover:bg-gold-hover hover:-translate-y-px active:bg-gold-active active:translate-y-px',
-  demo: 'border border-gold text-gold bg-transparent hover:bg-gold/10',
+  demo: 'border border-gold text-gold bg-transparent hover:bg-gold/10 active:bg-gold/20',
   disabled: 'bg-surface-raised border border-line text-text-muted cursor-not-allowed',
   loading: 'bg-gold-active text-bg relative overflow-hidden cursor-wait',
 };

@@ -44,7 +44,7 @@ export function ProfileTabs({
             className={`pb-3 font-display text-label uppercase ${
               tab === t
                 ? 'border-b-2 border-gold text-text-primary'
-                : 'text-text-muted'
+                : 'text-text-muted hover:text-text-secondary'
             }`}
           >
             {TAB_LABELS[t]}
@@ -127,7 +127,7 @@ export function ProfileTabs({
               </span>
               <a
                 href={`/case/${c.id}`}
-                className="flex h-9 items-center justify-center rounded-md border border-gold px-3 font-mono text-caps uppercase text-gold sm:justify-self-end"
+                className="flex h-9 items-center justify-center rounded-md border border-gold px-3 font-mono text-caps uppercase text-gold hover:bg-gold/10 sm:justify-self-end"
               >
                 открыть
               </a>

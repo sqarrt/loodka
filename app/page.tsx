@@ -51,7 +51,7 @@ export default async function HomePage() {
           <a
             key={link.href}
             href={link.href}
-            className="flex min-h-[120px] flex-col justify-between gap-6 rounded-lg border border-line bg-surface-card p-4 hover:border-line-strong"
+            className="flex min-h-[120px] flex-col justify-between gap-6 rounded-lg border border-line bg-surface-card p-4 hover:border-gold hover:bg-surface-raised"
           >
             <span className="h-3.5 w-3.5 rotate-45 rounded-[2px] border border-line-strong" />
             <div className="flex flex-col gap-1">
