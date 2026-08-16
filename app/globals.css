@@ -1,49 +1,91 @@
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import "tailwindcss";
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+@theme {
+  /* fonts (variables wired from next/font in layout.tsx) */
+  --font-display: var(--font-unbounded), sans-serif;
+  --font-sans: var(--font-manrope), sans-serif;
+  --font-mono: var(--font-jetbrains-mono), monospace;
 
-html {
-  height: 100%;
+  /* surfaces */
+  --color-bg: #0B0D12;
+  --color-surface-card: #13161D;
+  --color-surface-raised: #1A1F29;
+  --color-inset: #0F1218;
+  --color-line: #262C38;
+  --color-line-soft: #1C212B;
+  --color-line-strong: #3A4252;
+
+  /* text */
+  --color-text-primary: #E8EBF2;
+  --color-text-secondary: #9AA3B4;
+  --color-text-muted: #6B7385;
+  --color-text-dim: #4A5262;
+
+  /* accents & status */
+  --color-gold: #F5C542;
+  --color-gold-hover: #FFDA7A;
+  --color-gold-active: #DCAE30;
+  --color-success: #4FD1A1;
+  --color-danger: #FF5A47;
+
+  /* rarity ladder */
+  --color-rarity-common: #8A93A6;
+  --color-rarity-uncommon: #4D8DE0;
+  --color-rarity-rare: #8B5CF6;
+  --color-rarity-epic: #E0489A;
+  --color-rarity-legend: #F5C542;
+
+  /* radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  /* type scale (size--line-height pairs, per style guide §03) */
+  --text-display-xl: 54px;
+  --text-display-xl--line-height: 56px;
+  --text-display-lg: 34px;
+  --text-display-lg--line-height: 38px;
+  --text-heading: 24px;
+  --text-heading--line-height: 30px;
+  --text-body-lg: 17px;
+  --text-body-lg--line-height: 27px;
+  --text-body: 15px;
+  --text-body--line-height: 23px;
+  --text-label: 13px;
+  --text-label--line-height: 18px;
+  --text-mono-num: 12px;
+  --text-mono-num--line-height: 16px;
+  --text-caps: 11px;
+  --text-caps--line-height: 14px;
 }
 
 html,
 body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
 }
 
 * {
   box-sizing: border-box;
-  padding: 0;
-  margin: 0;
 }
 
 a {
-  color: inherit;
-  text-decoration: none;
+  color: var(--color-gold);
+}
+a:hover {
+  color: var(--color-gold-hover);
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+::selection {
+  background: var(--color-gold);
+  color: var(--color-bg);
+}
+
+@keyframes lk-sheen {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(220%);
   }
 }
