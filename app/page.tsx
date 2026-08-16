@@ -28,6 +28,12 @@ export default async function HomePage() {
       <p>
         <a href="/inventory">Инвентарь</a>
       </p>
+      <p>
+        <a href="/dashboard">Мои кейсы</a>
+      </p>
+      <p>
+        <a href={`/u/${user.id}`}>Мой профиль</a>
+      </p>
       <form action="/auth/signout" method="post">
         <button type="submit">Выйти</button>
       </form>
