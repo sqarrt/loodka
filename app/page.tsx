@@ -25,6 +25,9 @@ export default async function HomePage() {
       <p>
         <a href="/cases/new">Создать кейс</a>
       </p>
+      <p>
+        <a href="/inventory">Инвентарь</a>
+      </p>
       <form action="/auth/signout" method="post">
         <button type="submit">Выйти</button>
       </form>
