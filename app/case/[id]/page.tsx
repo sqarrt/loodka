@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { resolveImageUrl } from '@/lib/storage';
 import { computeOdds, type CaseItem } from '@/lib/cases';
+import { ItemCard } from '@/components/ItemCard';
+import { CurrencyIcon } from '@/components/CurrencyIcon';
 import { CaseOpener } from './CaseOpener';
 
 export default async function CasePage({ params }: { params: Promise<{ id: string }> }) {
@@ -40,18 +42,26 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
   }));
 
   return (
-    <main>
-      <h1>{caseRow.title}</h1>
-      <p>Цена крутки: {caseRow.price} лудок</p>
-      <ul>
-        {itemsWithOdds.map((item) => (
-          <li key={item.id}>
-            <img src={item.imageUrl} alt={item.name} width={80} height={80} />
-            <span>{item.name}</span>
-            <span>{(item.probability * 100).toFixed(1)}%</span>
-          </li>
-        ))}
-      </ul>
+    <main className="mx-auto flex max-w-[1140px] flex-col gap-7 px-10 py-10">
+      <div className="flex items-end justify-between gap-6">
+        <div className="flex flex-col gap-2">
+          <span className="font-mono text-caps uppercase text-text-muted">
+            {items.length} предметов
+          </span>
+          <h1 className="font-display text-display-xl uppercase leading-none">
+            {caseRow.title}
+          </h1>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          <span className="font-mono text-caps uppercase text-text-muted">
+            цена крутки
+          </span>
+          <span className="flex items-center gap-2 font-mono text-heading font-bold">
+            <CurrencyIcon size={15} /> {caseRow.price}
+          </span>
+        </div>
+      </div>
+
       <CaseOpener
         caseId={caseRow.id}
         items={itemsWithOdds}
@@ -59,6 +69,24 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
         canOpenReal={canOpenReal}
         initialBalance={balance}
       />
+
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-heading uppercase">Что может выпасть</h2>
+          <span className="font-mono text-caps text-text-muted">сумма шансов 100%</span>
+        </div>
+        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-6">
+          {itemsWithOdds.map((item) => (
+            <ItemCard
+              key={item.id}
+              name={item.name}
+              imageUrl={item.imageUrl}
+              probability={item.probability}
+              size="lg"
+            />
+          ))}
+        </div>
+      </div>
     </main>
   );
 }
