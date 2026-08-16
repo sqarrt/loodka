@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   pickWeightedRandom,
   buildReelStrip,
@@ -37,22 +38,31 @@ export function CaseOpener({
 }) {
   const [strip, setStrip] = useState<ItemWithImage[] | null>(null);
   const [offset, setOffset] = useState(0);
+  const [transitioning, setTransitioning] = useState(false);
   const [phase, setPhase] = useState<'idle' | 'spinning' | 'result'>('idle');
   const [result, setResult] = useState<ItemWithImage | null>(null);
   const [balance, setBalance] = useState(initialBalance);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const animateTo = (winner: ItemWithImage) => {
     const reel = buildReelStrip(items, winner);
     const jitter = (Math.random() - 0.5) * 76;
     const target = REEL_WINNER_INDEX * CARD_PITCH_PX + jitter;
 
+    // Reset must land in its own paint with the transition off, or the
+    // browser animates the reset itself instead of the spin (only visible
+    // from the 2nd spin on, once offset/phase are no longer both at rest).
     setResult(null);
     setStrip(reel);
+    setTransitioning(false);
     setOffset(0);
     setPhase('spinning');
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => setOffset(target));
+      requestAnimationFrame(() => {
+        setTransitioning(true);
+        setOffset(target);
+      });
     });
     window.setTimeout(() => {
       setPhase('result');
@@ -79,6 +89,7 @@ export function CaseOpener({
 
     const winner = items.find((item) => item.id === response.itemId);
     setBalance(response.newBalance ?? balance);
+    router.refresh();
     if (winner) animateTo(winner);
   };
 
@@ -100,10 +111,9 @@ export function CaseOpener({
             className="absolute left-1/2 top-0 flex gap-3 will-change-transform"
             style={{
               transform: `translateX(-${offset}px)`,
-              transition:
-                phase === 'spinning'
-                  ? `transform ${SPIN_DURATION_MS}ms cubic-bezier(.08,.72,.02,1)`
-                  : 'none',
+              transition: transitioning
+                ? `transform ${SPIN_DURATION_MS}ms cubic-bezier(.08,.72,.02,1)`
+                : 'none',
             }}
           >
             {(strip ?? items).map((item, i) => (
@@ -170,7 +180,9 @@ export function CaseOpener({
               {result.name}
             </span>
             <span className="text-body text-text-secondary">
-              Предмет уже в инвентаре. Можно поставить на витрину или обменять на лудки.
+              {canOpenReal
+                ? 'Предмет уже в инвентаре. Можно поставить на витрину или обменять на лудки.'
+                : 'Демо-открытие — лудки не списаны, предмет не добавлен в инвентарь.'}
             </span>
           </div>
         </div>
