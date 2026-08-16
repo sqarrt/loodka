@@ -1,19 +1,10 @@
-'use client';
-
-import { createClient } from '@/lib/supabase/client';
+import { GoogleLoginButton } from '@/components/GoogleLoginButton';
 
 export default function LoginPage() {
-  const handleLogin = async () => {
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
-  };
-
   return (
-    <main>
-      <button onClick={handleLogin}>Войти через Google</button>
+    <main className="mx-auto flex min-h-screen max-w-[1140px] flex-col items-center justify-center gap-6 px-10">
+      <h1 className="font-display text-display-lg uppercase">Loodka</h1>
+      <GoogleLoginButton />
     </main>
   );
 }
