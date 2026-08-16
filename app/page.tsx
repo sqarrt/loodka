@@ -31,10 +31,8 @@ export default async function HomePage() {
   const displayName = user.email?.split('@')[0] ?? 'игрок';
 
   const links = [
-    { href: '/cases/new', label: 'Создать кейс', hint: '2+ предмета' },
     { href: '/inventory', label: 'Инвентарь', hint: '' },
-    { href: '/dashboard', label: 'Мои кейсы', hint: '' },
-    { href: `/u/${user.id}`, label: 'Мой профиль', hint: '' },
+    { href: `/u/${user.id}`, label: 'Мой профиль', hint: 'витрина · кейсы' },
   ];
 
   return (
@@ -48,7 +46,7 @@ export default async function HomePage() {
         </h1>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3">
         {links.map((link) => (
           <a
             key={link.href}

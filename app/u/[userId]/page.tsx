@@ -21,10 +21,13 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
     .order('obtained_at', { ascending: false });
 
   const caseIds = [...new Set((rows ?? []).map((r) => r.case_id))];
-  const { data: cases } = await supabase.from('cases').select('id, items').in('id', caseIds);
+  const { data: inventoryCases } = await supabase
+    .from('cases')
+    .select('id, items')
+    .in('id', caseIds);
 
   const casesById: CaseItemsById = {};
-  for (const c of cases ?? []) {
+  for (const c of inventoryCases ?? []) {
     casesById[c.id] = c.items as CaseItem[];
   }
 
@@ -43,13 +46,26 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
     | null
   )[];
 
+  const { data: ownCases } = await supabase
+    .from('cases')
+    .select('id, title, price, items')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  const cases = (ownCases ?? []).map((c) => ({
+    id: c.id,
+    title: c.title,
+    price: c.price,
+    itemCount: (c.items as unknown[]).length,
+  }));
+
   return (
     <main className="mx-auto flex max-w-[1140px] flex-col gap-6 px-10 py-10">
       <div className="flex flex-col gap-1">
         <span className="font-mono text-caps uppercase text-text-muted">профиль</span>
         <h1 className="font-display text-display-lg uppercase">{displayName ?? 'Профиль'}</h1>
       </div>
-      <ProfileTabs slots={slots} allItems={allItems} viewerIsOwner={viewerIsOwner} />
+      <ProfileTabs slots={slots} allItems={allItems} cases={cases} viewerIsOwner={viewerIsOwner} />
     </main>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ShowcasePicker } from './ShowcasePicker';
+import { CurrencyIcon } from '@/components/CurrencyIcon';
 
 type DisplayItem = {
   inventoryId: string;
@@ -9,23 +10,34 @@ type DisplayItem = {
   imageUrl: string;
 };
 
+type CaseSummary = {
+  id: string;
+  title: string;
+  price: number;
+  itemCount: number;
+};
+
 export function ProfileTabs({
   slots,
   allItems,
+  cases,
   viewerIsOwner,
 }: {
   slots: (string | null)[];
   allItems: DisplayItem[];
+  cases: CaseSummary[];
   viewerIsOwner: boolean;
 }) {
-  const [tab, setTab] = useState<'showcase' | 'inventory'>('showcase');
+  const [tab, setTab] = useState<'showcase' | 'inventory' | 'cases'>('showcase');
   const [pickerSlot, setPickerSlot] = useState<number | null>(null);
   const itemsById = new Map(allItems.map((item) => [item.inventoryId, item]));
+
+  const TAB_LABELS = { showcase: 'Витрина', inventory: 'Инвентарь', cases: 'Кейсы' } as const;
 
   return (
     <div className="flex flex-col gap-5">
       <nav className="flex gap-6 border-b border-line-soft">
-        {(['showcase', 'inventory'] as const).map((t) => (
+        {(['showcase', 'inventory', 'cases'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -35,7 +47,7 @@ export function ProfileTabs({
                 : 'text-text-muted'
             }`}
           >
-            {t === 'showcase' ? 'Витрина' : 'Инвентарь'}
+            {TAB_LABELS[t]}
           </button>
         ))}
       </nav>
@@ -96,6 +108,34 @@ export function ProfileTabs({
               <span className="text-label font-semibold">{item.name}</span>
             </div>
           ))}
+        </div>
+      )}
+
+      {tab === 'cases' && (
+        <div className="flex flex-col gap-2.5">
+          {cases.map((c) => (
+            <div
+              key={c.id}
+              className="flex flex-col gap-3 rounded-lg border border-line bg-surface-card p-4 sm:grid sm:grid-cols-[1fr_110px_90px_auto] sm:items-center"
+            >
+              <span className="font-display text-label uppercase">{c.title}</span>
+              <span className="font-mono text-mono-num text-text-secondary">
+                {c.itemCount} предметов
+              </span>
+              <span className="flex items-center gap-2 font-mono text-label font-bold">
+                <CurrencyIcon size={12} /> {c.price}
+              </span>
+              <a
+                href={`/case/${c.id}`}
+                className="flex h-9 items-center justify-center rounded-md border border-gold px-3 font-mono text-caps uppercase text-gold sm:justify-self-end"
+              >
+                открыть
+              </a>
+            </div>
+          ))}
+          {cases.length === 0 && (
+            <p className="font-mono text-caps text-text-muted">Кейсов пока нет.</p>
+          )}
         </div>
       )}
 
