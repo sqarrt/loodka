@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { pickWeightedRandom, buildReelStrip, REEL_WINNER_INDEX } from '@/lib/cases';
+import { openCaseForReal } from '@/app/actions/open-case-for-real';
 
 type ItemWithImage = {
   id: string;
@@ -12,27 +13,67 @@ type ItemWithImage = {
 
 const CARD_WIDTH = 120;
 
-export function CaseOpener({ items }: { items: ItemWithImage[] }) {
+export function CaseOpener({
+  caseId,
+  items,
+  price,
+  canOpenReal,
+  initialBalance,
+}: {
+  caseId: string;
+  items: ItemWithImage[];
+  price: number;
+  canOpenReal: boolean;
+  initialBalance: number | null;
+}) {
   const [strip, setStrip] = useState<ItemWithImage[] | null>(null);
   const [offset, setOffset] = useState(0);
   const [result, setResult] = useState<ItemWithImage | null>(null);
+  const [balance, setBalance] = useState(initialBalance);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
 
-  const handleOpen = () => {
-    const winner = pickWeightedRandom(items);
+  const animateTo = (winner: ItemWithImage) => {
     const reel = buildReelStrip(items, winner);
     setResult(null);
     setStrip(reel);
     setOffset(0);
-    // Force a reflow so the transition below actually animates from 0.
     requestAnimationFrame(() => {
       setOffset(REEL_WINNER_INDEX * CARD_WIDTH);
     });
     window.setTimeout(() => setResult(winner), 4200);
   };
 
+  const handleDemoOpen = () => {
+    animateTo(pickWeightedRandom(items));
+  };
+
+  const handleRealOpen = async () => {
+    setError(null);
+    setPending(true);
+    const response = await openCaseForReal(caseId);
+    setPending(false);
+
+    if (response.error) {
+      setError(response.error);
+      return;
+    }
+
+    const winner = items.find((item) => item.id === response.itemId);
+    if (winner) animateTo(winner);
+    setBalance(response.newBalance ?? balance);
+  };
+
   return (
     <div>
-      <button onClick={handleOpen}>Открыть (демо)</button>
+      {canOpenReal ? (
+        <button onClick={handleRealOpen} disabled={pending || (balance ?? 0) < price}>
+          Открыть за {price} лудок (баланс: {balance ?? 0})
+        </button>
+      ) : (
+        <button onClick={handleDemoOpen}>Открыть (демо)</button>
+      )}
+      {error && <p role="alert">{error}</p>}
       {strip && (
         <div style={{ overflow: 'hidden', width: CARD_WIDTH, position: 'relative' }}>
           <div

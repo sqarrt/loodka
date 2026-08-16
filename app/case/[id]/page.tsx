@@ -10,11 +10,28 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
 
   const { data: caseRow } = await supabase
     .from('cases')
-    .select('id, title, price, items')
+    .select('id, title, price, items, user_id')
     .eq('id', id)
     .maybeSingle();
 
   if (!caseRow) notFound();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let balance: number | null = null;
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('balance')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    balance = profile?.balance ?? 0;
+  }
+
+  const isAuthor = user?.id === caseRow.user_id;
+  const canOpenReal = !!user && !isAuthor;
 
   const items = caseRow.items as CaseItem[];
   const itemsWithOdds = computeOdds(items).map((item) => ({
@@ -35,7 +52,13 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
           </li>
         ))}
       </ul>
-      <CaseOpener items={itemsWithOdds} />
+      <CaseOpener
+        caseId={caseRow.id}
+        items={itemsWithOdds}
+        price={caseRow.price}
+        canOpenReal={canOpenReal}
+        initialBalance={balance}
+      />
     </main>
   );
 }
