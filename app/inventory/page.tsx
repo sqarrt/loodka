@@ -4,7 +4,6 @@ import { resolveImageUrl } from '@/lib/storage';
 import { mapInventoryToDisplayItems, type CaseItemsById } from '@/lib/inventory';
 import type { CaseItem } from '@/lib/cases';
 import { CashBackButton } from './CashBackButton';
-import { ShowcaseSlotPicker } from './ShowcaseSlotPicker';
 
 export default async function InventoryPage() {
   const supabase = await createClient();
@@ -28,35 +27,46 @@ export default async function InventoryPage() {
     casesById[c.id] = c.items as CaseItem[];
   }
 
-  const { data: showcase } = await supabase
-    .from('profile_showcases')
-    .select('slots')
-    .eq('user_id', user.id)
-    .maybeSingle();
-  const slots = ((showcase?.slots as (string | null)[]) ?? Array(12).fill(null)) as (
-    | string
-    | null
-  )[];
-
   const displayItems = mapInventoryToDisplayItems(rows ?? [], casesById).map((item) => ({
     ...item,
     imageUrl: item.image_path ? resolveImageUrl(supabase, item.image_path) : '',
-    slotIndex: slots.indexOf(item.inventoryId) === -1 ? null : slots.indexOf(item.inventoryId),
   }));
 
   return (
-    <main>
-      <h1>Инвентарь</h1>
-      <ul>
+    <main className="mx-auto flex max-w-[1140px] flex-col gap-5 px-10 py-10">
+      <div className="flex flex-col gap-1">
+        <span className="font-mono text-caps uppercase text-text-muted">
+          {displayItems.length} предметов
+        </span>
+        <h1 className="font-display text-display-lg uppercase">Инвентарь</h1>
+      </div>
+      <div className="flex flex-col gap-2.5">
         {displayItems.map((item) => (
-          <li key={item.inventoryId}>
-            {item.imageUrl && <img src={item.imageUrl} alt={item.name} width={80} height={80} />}
-            <span>{item.name}</span>
-            <ShowcaseSlotPicker inventoryId={item.inventoryId} currentSlotIndex={item.slotIndex} />
+          <div
+            key={item.inventoryId}
+            className="flex items-center gap-4 rounded-lg border border-line bg-surface-card p-3 hover:bg-surface-raised"
+          >
+            {item.imageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={item.imageUrl}
+                alt={item.name}
+                className="h-18 w-24 shrink-0 rounded-md border border-line object-cover"
+              />
+            )}
+            <div className="flex flex-1 flex-col gap-1">
+              <span className="text-label font-semibold">{item.name}</span>
+              <span className="font-mono text-caps text-text-muted">
+                получен {new Date(item.obtainedAt).toLocaleDateString('ru-RU')}
+              </span>
+            </div>
             <CashBackButton inventoryId={item.inventoryId} cashbackValue={item.cashbackValue} />
-          </li>
+          </div>
         ))}
-      </ul>
+      </div>
+      <span className="font-mono text-caps text-text-dim">
+        витрина здесь не редактируется — только на своём профиле
+      </span>
     </main>
   );
 }
