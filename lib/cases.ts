@@ -1,0 +1,43 @@
+export type CaseItem = {
+  id: string;
+  name: string;
+  image_path: string;
+  weight: number;
+};
+
+export type CaseItemWithOdds = CaseItem & { probability: number };
+
+export function computeOdds(items: CaseItem[]): CaseItemWithOdds[] {
+  const total = items.reduce((sum, item) => sum + item.weight, 0);
+  return items.map((item) => ({ ...item, probability: item.weight / total }));
+}
+
+export function pickWeightedRandom<T extends { weight: number }>(
+  items: T[],
+  random: () => number = Math.random
+): T {
+  const total = items.reduce((sum, item) => sum + item.weight, 0);
+  let r = random() * total;
+  for (const item of items) {
+    if (r < item.weight) return item;
+    r -= item.weight;
+  }
+  return items[items.length - 1];
+}
+
+export const REEL_LENGTH = 40;
+export const REEL_WINNER_INDEX = 35;
+
+export function buildReelStrip<T>(
+  items: T[],
+  winner: T,
+  random: () => number = Math.random,
+  length: number = REEL_LENGTH,
+  winnerIndex: number = REEL_WINNER_INDEX
+): T[] {
+  const strip: T[] = [];
+  for (let i = 0; i < length; i++) {
+    strip.push(i === winnerIndex ? winner : items[Math.floor(random() * items.length)]);
+  }
+  return strip;
+}
