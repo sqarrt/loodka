@@ -25,8 +25,9 @@ export function pickWeightedRandom<T extends { weight: number }>(
   return items[items.length - 1];
 }
 
-export const REEL_LENGTH = 40;
-export const REEL_WINNER_INDEX = 35;
+export const REEL_LENGTH = 60;
+export const REEL_WINNER_INDEX = 52;
+export const CARD_PITCH_PX = 132; // 120px card + 12px gap
 
 export function buildReelStrip<T>(
   items: T[],

@@ -1,17 +1,26 @@
 'use client';
 
 import { useState } from 'react';
-import { pickWeightedRandom, buildReelStrip, REEL_WINNER_INDEX } from '@/lib/cases';
+import {
+  pickWeightedRandom,
+  buildReelStrip,
+  REEL_WINNER_INDEX,
+  CARD_PITCH_PX,
+} from '@/lib/cases';
 import { openCaseForReal } from '@/app/actions/open-case-for-real';
+import { ItemCard } from '@/components/ItemCard';
+import { Button } from '@/components/Button';
+import { CurrencyIcon } from '@/components/CurrencyIcon';
 
 type ItemWithImage = {
   id: string;
   name: string;
   imageUrl: string;
   weight: number;
+  probability: number;
 };
 
-const CARD_WIDTH = 120;
+const SPIN_DURATION_MS = 6200;
 
 export function CaseOpener({
   caseId,
@@ -28,73 +37,143 @@ export function CaseOpener({
 }) {
   const [strip, setStrip] = useState<ItemWithImage[] | null>(null);
   const [offset, setOffset] = useState(0);
+  const [phase, setPhase] = useState<'idle' | 'spinning' | 'result'>('idle');
   const [result, setResult] = useState<ItemWithImage | null>(null);
   const [balance, setBalance] = useState(initialBalance);
   const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
 
   const animateTo = (winner: ItemWithImage) => {
     const reel = buildReelStrip(items, winner);
+    const jitter = (Math.random() - 0.5) * 76;
+    const target = REEL_WINNER_INDEX * CARD_PITCH_PX + jitter;
+
     setResult(null);
     setStrip(reel);
     setOffset(0);
+    setPhase('spinning');
     requestAnimationFrame(() => {
-      setOffset(REEL_WINNER_INDEX * CARD_WIDTH);
+      requestAnimationFrame(() => setOffset(target));
     });
-    window.setTimeout(() => setResult(winner), 4200);
+    window.setTimeout(() => {
+      setPhase('result');
+      setResult(winner);
+    }, SPIN_DURATION_MS + 50);
   };
 
   const handleDemoOpen = () => {
+    if (phase === 'spinning') return;
     animateTo(pickWeightedRandom(items));
   };
 
   const handleRealOpen = async () => {
+    if (phase === 'spinning') return;
     setError(null);
-    setPending(true);
+    setPhase('spinning');
     const response = await openCaseForReal(caseId);
-    setPending(false);
 
     if (response.error) {
+      setPhase('idle');
       setError(response.error);
       return;
     }
 
     const winner = items.find((item) => item.id === response.itemId);
-    if (winner) animateTo(winner);
     setBalance(response.newBalance ?? balance);
+    if (winner) animateTo(winner);
   };
 
+  const insufficientFunds = canOpenReal && (balance ?? 0) < price;
+
   return (
-    <div>
-      {canOpenReal ? (
-        <button onClick={handleRealOpen} disabled={pending || (balance ?? 0) < price}>
-          Открыть за {price} лудок (баланс: {balance ?? 0})
-        </button>
-      ) : (
-        <button onClick={handleDemoOpen}>Открыть (демо)</button>
-      )}
-      {error && <p role="alert">{error}</p>}
-      {strip && (
-        <div style={{ overflow: 'hidden', width: CARD_WIDTH, position: 'relative' }}>
+    <div className="flex flex-col gap-6">
+      <div
+        className="relative overflow-hidden rounded-lg border border-line bg-[#08090D] py-3"
+        style={{ opacity: phase === 'spinning' ? 1 : phase === 'result' ? 0.55 : 0.82 }}
+      >
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-3 w-[110px] bg-gradient-to-r from-[#08090D] to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-3 w-[110px] bg-gradient-to-l from-[#08090D] to-transparent" />
+        <div className="absolute inset-y-0 left-1/2 z-4 w-0.5 -translate-x-1/2 bg-gold shadow-[0_0_16px_2px_rgba(245,197,66,0.53)]" />
+        <div className="absolute -top-[5px] left-1/2 z-5 h-[11px] w-[11px] -translate-x-1/2 rotate-45 rounded-[2px] bg-gold" />
+        <div className="absolute -bottom-[5px] left-1/2 z-5 h-[11px] w-[11px] -translate-x-1/2 rotate-45 rounded-[2px] bg-gold" />
+        <div className="relative h-[150px]">
           <div
+            className="absolute left-1/2 top-0 flex gap-3 will-change-transform"
             style={{
-              display: 'flex',
               transform: `translateX(-${offset}px)`,
-              transition: 'transform 4s cubic-bezier(0.15, 0.85, 0.25, 1)',
+              transition:
+                phase === 'spinning'
+                  ? `transform ${SPIN_DURATION_MS}ms cubic-bezier(.08,.72,.02,1)`
+                  : 'none',
             }}
           >
-            {strip.map((item, i) => (
-              <div key={i} style={{ minWidth: CARD_WIDTH }}>
-                <img src={item.imageUrl} alt={item.name} width={100} height={100} />
-              </div>
+            {(strip ?? items).map((item, i) => (
+              <ItemCard key={i} name={item.name} imageUrl={item.imageUrl} size="sm" />
             ))}
           </div>
         </div>
-      )}
-      {result && (
-        <p>
-          Выпало: <strong>{result.name}</strong>
-        </p>
+      </div>
+
+      <div className="flex flex-col items-center gap-2">
+        {canOpenReal ? (
+          <Button
+            variant={phase === 'spinning' ? 'loading' : insufficientFunds ? 'disabled' : 'cta'}
+            onClick={handleRealOpen}
+            className="min-w-[340px]"
+          >
+            {phase === 'spinning' ? (
+              'Крутим…'
+            ) : insufficientFunds ? (
+              <span className="flex flex-col items-center gap-0.5 normal-case">
+                <span className="uppercase">Не хватает лудок</span>
+                <span className="font-mono text-caps normal-case">
+                  нужно ещё {price - (balance ?? 0)} · баланс {balance ?? 0}
+                </span>
+              </span>
+            ) : (
+              <>
+                Открыть за <CurrencyIcon size={15} /> {price}
+              </>
+            )}
+          </Button>
+        ) : (
+          <Button
+            variant={phase === 'spinning' ? 'loading' : 'demo'}
+            onClick={handleDemoOpen}
+            className="min-w-[340px]"
+          >
+            {phase === 'spinning' ? 'Крутим…' : 'Открыть (демо)'}
+          </Button>
+        )}
+        <span className="font-mono text-caps text-text-dim">
+          {canOpenReal
+            ? `баланс ${balance ?? 0}`
+            : 'демо не списывает лудки и не даёт предмет'}
+        </span>
+        {error && (
+          <p role="alert" className="text-caps font-mono text-danger">
+            {error}
+          </p>
+        )}
+      </div>
+
+      {phase === 'result' && result && (
+        <div
+          className="flex items-center gap-6 rounded-lg border bg-inset p-6"
+          style={{ borderColor: 'var(--color-gold)' }}
+        >
+          <div className="w-38 shrink-0">
+            <ItemCard name={result.name} imageUrl={result.imageUrl} size="lg" />
+          </div>
+          <div className="flex flex-1 flex-col gap-2">
+            <span className="font-mono text-caps uppercase text-gold">выпало</span>
+            <span className="font-display text-display-lg uppercase leading-none">
+              {result.name}
+            </span>
+            <span className="text-body text-text-secondary">
+              Предмет уже в инвентаре. Можно поставить на витрину или обменять на лудки.
+            </span>
+          </div>
+        </div>
       )}
     </div>
   );
