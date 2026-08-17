@@ -24,9 +24,13 @@ export async function GET(request: Request) {
 
         if (!profile) {
           const today = new Date().toISOString().slice(0, 10);
-          await supabase
-            .from('profiles')
-            .insert({ user_id: user.id, balance: DAILY_BONUS_AMOUNT, last_daily_claim_at: today });
+          const displayName = user.email?.split('@')[0] ?? 'игрок';
+          await supabase.from('profiles').insert({
+            user_id: user.id,
+            balance: DAILY_BONUS_AMOUNT,
+            last_daily_claim_at: today,
+            display_name: displayName,
+          });
         }
       }
 

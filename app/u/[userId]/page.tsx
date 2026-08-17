@@ -40,6 +40,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
     .from('cases')
     .select('id, title, price, case_items(id)')
     .eq('user_id', userId)
+    .is('deleted_at', null)
     .eq('case_items.removed', false)
     .order('created_at', { ascending: false });
 

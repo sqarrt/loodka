@@ -11,7 +11,12 @@ async function createSignedInUser(email: string, balance: number) {
   const password = 'test-password-123';
   const { data } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
   const userId = data.user!.id;
-  await admin.from('profiles').insert({ user_id: userId, balance, last_daily_claim_at: '2026-08-16' });
+  await admin.from('profiles').insert({
+    user_id: userId,
+    balance,
+    last_daily_claim_at: '2026-08-16',
+    display_name: email.split('@')[0],
+  });
   const client = createClient(url, anonKey);
   await client.auth.signInWithPassword({ email, password });
   return { userId, client };

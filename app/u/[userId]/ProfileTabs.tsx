@@ -125,12 +125,22 @@ export function ProfileTabs({
               <span className="flex items-center gap-2 font-mono text-label font-bold">
                 <CurrencyIcon size={12} /> {c.price}
               </span>
-              <a
-                href={`/case/${c.id}`}
-                className="flex h-9 items-center justify-center rounded-md border border-gold px-3 font-mono text-caps uppercase text-gold hover:bg-gold/10 sm:justify-self-end"
-              >
-                открыть
-              </a>
+              <div className="flex gap-2 sm:justify-self-end">
+                {viewerIsOwner && (
+                  <a
+                    href={`/case/${c.id}/edit`}
+                    className="flex h-9 items-center justify-center rounded-md border border-line-strong px-3 font-mono text-caps uppercase text-text-secondary hover:border-gold hover:text-gold"
+                  >
+                    изменить
+                  </a>
+                )}
+                <a
+                  href={`/case/${c.id}`}
+                  className="flex h-9 items-center justify-center rounded-md border border-gold px-3 font-mono text-caps uppercase text-gold hover:bg-gold/10"
+                >
+                  открыть
+                </a>
+              </div>
             </div>
           ))}
           {cases.length === 0 && (

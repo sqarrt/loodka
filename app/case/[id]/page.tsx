@@ -20,13 +20,13 @@ export default async function CasePage({
 
   const { data: caseRow } = await supabase
     .from('cases')
-    .select('id, title, price, user_id, case_items(id, name, image_path, weight)')
+    .select('id, title, price, user_id, deleted_at, case_items(id, name, image_path, weight)')
     .eq('id', id)
     .eq('case_items.removed', false)
     .order('position', { referencedTable: 'case_items' })
     .maybeSingle();
 
-  if (!caseRow) notFound();
+  if (!caseRow || caseRow.deleted_at) notFound();
 
   const {
     data: { user },

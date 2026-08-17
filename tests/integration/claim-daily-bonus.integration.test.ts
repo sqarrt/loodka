@@ -29,7 +29,12 @@ describe('daily bonus grant (data layer)', () => {
   it('creates a profile with 10 balance on first bootstrap', async () => {
     const { data, error } = await admin
       .from('profiles')
-      .insert({ user_id: userId, balance: 10, last_daily_claim_at: '2026-08-16' })
+      .insert({
+        user_id: userId,
+        balance: 10,
+        last_daily_claim_at: '2026-08-16',
+        display_name: email.split('@')[0],
+      })
       .select('balance, last_daily_claim_at')
       .single();
 
