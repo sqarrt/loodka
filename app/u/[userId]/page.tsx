@@ -15,7 +15,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
 
   const { data: rows } = await supabase
     .from('inventory')
-    .select('id, cashback_value, obtained_at, case_items(name, image_path)')
+    .select('id, cashback_value, obtained_at, case_items(name, image_path, description)')
     .eq('user_id', userId)
     .order('obtained_at', { ascending: false });
 

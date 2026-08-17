@@ -8,7 +8,7 @@ describe('mapInventoryToDisplayItems', () => {
         id: 'inv-1',
         cashback_value: 5,
         obtained_at: '2026-08-16T00:00:00Z',
-        case_items: { name: 'Beta', image_path: 'b.png' },
+        case_items: { name: 'Beta', image_path: 'b.png', description: 'A shiny beta thing' },
       },
     ];
     const result = mapInventoryToDisplayItems(rows);
@@ -17,6 +17,7 @@ describe('mapInventoryToDisplayItems', () => {
         inventoryId: 'inv-1',
         name: 'Beta',
         image_path: 'b.png',
+        description: 'A shiny beta thing',
         cashbackValue: 5,
         obtainedAt: '2026-08-16T00:00:00Z',
       },

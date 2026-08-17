@@ -10,6 +10,7 @@ type DisplayItem = {
   inventoryId: string;
   name: string;
   imageUrl: string;
+  description: string | null;
 };
 
 type CaseSummary = {
@@ -90,7 +91,13 @@ export function ProfileTabs({
       {tab === 'inventory' && (
         <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-6">
           {allItems.map((item) => (
-            <ItemCard key={item.inventoryId} name={item.name} imageUrl={item.imageUrl} size="md" />
+            <ItemCard
+              key={item.inventoryId}
+              name={item.name}
+              imageUrl={item.imageUrl}
+              description={item.description}
+              size="md"
+            />
           ))}
         </div>
       )}

@@ -21,6 +21,7 @@ type ItemWithImage = {
   imageUrl: string;
   weight: number;
   probability: number;
+  description: string | null;
 };
 
 const SPIN_DURATION_MS = 6200;
@@ -243,6 +244,9 @@ export function CaseOpener({
                   ? 'Предмет уже в инвентаре. Можно поставить на витрину или обменять на лудки.'
                   : 'Демо-открытие — лудки не списаны, предмет не добавлен в инвентарь.'}
             </span>
+            {result.description && (
+              <p className="text-body text-text-secondary">{result.description}</p>
+            )}
           </div>
         </div>
       )}

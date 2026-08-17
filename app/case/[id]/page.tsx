@@ -108,6 +108,7 @@ export default async function CasePage({
               name={item.name}
               imageUrl={item.imageUrl}
               probability={item.probability}
+              description={item.description}
               size="lg"
             />
           ))}
