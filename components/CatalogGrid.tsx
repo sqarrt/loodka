@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { loadMoreCases } from '@/app/actions/load-more-cases';
 import { RARITY_INFO } from '@/lib/rarity';
 import { CurrencyIcon } from '@/components/CurrencyIcon';
@@ -67,15 +67,30 @@ export function CatalogGrid({
   const [cases, setCases] = useState(initialCases);
   const [cursor, setCursor] = useState(initialCursor);
   const [isPending, startTransition] = useTransition();
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);
 
-  const handleLoadMore = () => {
-    if (!cursor) return;
-    startTransition(async () => {
-      const result = await loadMoreCases(filters, cursor);
-      setCases((prev) => [...prev, ...result.cases]);
-      setCursor(result.nextCursor);
-    });
-  };
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !cursor) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loadingRef.current) {
+          loadingRef.current = true;
+          startTransition(async () => {
+            const result = await loadMoreCases(filters, cursor);
+            setCases((prev) => [...prev, ...result.cases]);
+            setCursor(result.nextCursor);
+            loadingRef.current = false;
+          });
+        }
+      },
+      { rootMargin: '600px' }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [cursor, filters]);
 
   if (cases.length === 0) {
     return (
@@ -100,13 +115,13 @@ export function CatalogGrid({
         ))}
       </div>
       {cursor && (
-        <button
-          onClick={handleLoadMore}
-          disabled={isPending}
-          className="mx-auto flex h-11 items-center rounded-md border border-line-strong px-6 font-mono text-caps uppercase tracking-[0.08em] text-text-secondary transition-colors hover:border-gold hover:text-gold disabled:opacity-50"
-        >
-          {isPending ? 'Загружаем…' : 'Показать ещё'}
-        </button>
+        <div ref={sentinelRef} className="flex h-11 items-center justify-center">
+          {isPending && (
+            <span className="font-mono text-caps uppercase tracking-[0.08em] text-text-muted">
+              Загружаем…
+            </span>
+          )}
+        </div>
       )}
     </div>
   );
