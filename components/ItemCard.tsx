@@ -49,7 +49,7 @@ export function ItemCard({
       >
         {imageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt={name} className="h-full w-full object-cover" />
+          <img src={imageUrl} alt={name} className="h-full w-full object-cover p-2" />
         )}
       </div>
       <div className="flex flex-col gap-1.5 p-3">
