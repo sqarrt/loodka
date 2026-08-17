@@ -15,7 +15,7 @@ export default async function CaseEditPage({ params }: { params: Promise<{ id: s
   const { data: caseRow } = await supabase
     .from('cases')
     .select(
-      'id, title, price, user_id, open_count, created_at, deleted_at, case_items(id, name, image_path, weight, removed, description)'
+      'id, title, price, user_id, open_count, created_at, deleted_at, cover_image_path, case_items(id, name, image_path, weight, removed, description)'
     )
     .eq('id', id)
     .order('position', { referencedTable: 'case_items' })
@@ -49,6 +49,7 @@ export default async function CaseEditPage({ params }: { params: Promise<{ id: s
         earned={earned}
         createdAt={caseRow.created_at}
         initialItems={items}
+        coverImageUrl={caseRow.cover_image_path ? resolveImageUrl(supabase, caseRow.cover_image_path) : null}
       />
     </main>
   );

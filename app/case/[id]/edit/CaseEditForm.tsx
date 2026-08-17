@@ -45,6 +45,7 @@ export function CaseEditForm({
   earned,
   createdAt,
   initialItems,
+  coverImageUrl,
 }: {
   caseId: string;
   title: string;
@@ -53,12 +54,15 @@ export function CaseEditForm({
   earned: number;
   createdAt: string;
   initialItems: InitialItem[];
+  coverImageUrl: string | null;
 }) {
   const [title, setTitle] = useState(initialTitle);
   const [price, setPrice] = useState(initialPrice);
   const [items, setItems] = useState<EditableItem[]>(
     initialItems.map((item) => ({ ...item, key: item.id, file: null }))
   );
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(coverImageUrl);
   const [state, formAction, isPending] = useActionState(updateCase.bind(null, caseId), null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
@@ -111,10 +115,19 @@ export function CaseEditForm({
     updateItem(key, { file, imageUrl: URL.createObjectURL(file) });
   };
 
+  const handleCoverChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCoverFile(file);
+    setCoverPreview(URL.createObjectURL(file));
+  };
+
   const handleReset = () => {
     setTitle(initialTitle);
     setPrice(initialPrice);
     setItems(initialItems.map((item) => ({ ...item, key: item.id, file: null })));
+    setCoverFile(null);
+    setCoverPreview(coverImageUrl);
   };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -147,6 +160,7 @@ export function CaseEditForm({
     });
     fd.set('items', JSON.stringify(payload));
     newFiles.forEach((file) => fd.append('newItemImage', file));
+    if (coverFile) fd.set('coverImage', coverFile);
 
     formAction(fd);
   };
@@ -214,6 +228,24 @@ export function CaseEditForm({
             </div>
           </label>
         </div>
+
+        <label className="flex flex-col gap-2">
+          <span className="font-mono text-caps uppercase text-text-muted">обложка кейса</span>
+          <label className="relative flex h-[110px] w-[220px] cursor-pointer items-center justify-center overflow-hidden rounded-md border border-dashed border-line-strong bg-inset text-center font-mono text-[10px] text-text-dim hover:border-gold hover:text-gold">
+            {coverPreview ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={coverPreview} alt="" className="h-full w-full object-cover" />
+            ) : (
+              'загрузить обложку'
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleCoverChange}
+              className="absolute inset-0 cursor-pointer opacity-0"
+            />
+          </label>
+        </label>
 
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">

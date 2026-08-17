@@ -80,11 +80,18 @@ export async function updateCase(
     }
   }
 
+  const coverFile = formData.get('coverImage');
+  let coverPath: string | null = null;
+  if (coverFile instanceof File && coverFile.size > 0) {
+    coverPath = await uploadItemImage(supabase, user.id, coverFile);
+  }
+
   const { error } = await supabase.rpc('update_case_with_items', {
     p_case_id: caseId,
     p_title: title,
     p_price: price,
     p_items: itemsWithImages,
+    p_cover_image_path: coverPath,
   });
 
   if (error) return { error: ERROR_MESSAGES[error.message] ?? error.message };
