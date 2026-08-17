@@ -1,7 +1,6 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { assignItemToSlot } from '@/lib/showcase';
 
 export async function setShowcaseSlot(inventoryId: string, slotIndex: number | null) {
   const supabase = await createClient();
@@ -21,23 +20,23 @@ export async function setShowcaseSlot(inventoryId: string, slotIndex: number | n
     return { error: 'Это не твой предмет.' };
   }
 
-  const { data: showcase } = await supabase
-    .from('profile_showcases')
-    .select('slots')
-    .eq('user_id', user.id)
-    .maybeSingle();
+  // Clear whatever slot this item currently occupies (if any) before
+  // placing it elsewhere — showcase_slots.inventory_id is unique, so an
+  // item can only ever be in one slot at a time.
+  const { error: clearError } = await supabase
+    .from('showcase_slots')
+    .delete()
+    .eq('inventory_id', inventoryId);
 
-  const currentSlots = ((showcase?.slots as (string | null)[]) ?? Array(12).fill(null)) as (
-    | string
-    | null
-  )[];
-  const updatedSlots = assignItemToSlot(currentSlots, inventoryId, slotIndex);
+  if (clearError) return { error: clearError.message };
 
-  const { error } = await supabase
-    .from('profile_showcases')
-    .upsert({ user_id: user.id, slots: updatedSlots });
+  if (slotIndex !== null) {
+    const { error: insertError } = await supabase
+      .from('showcase_slots')
+      .upsert({ user_id: user.id, slot_index: slotIndex, inventory_id: inventoryId });
 
-  if (error) return { error: error.message };
+    if (insertError) return { error: insertError.message };
+  }
 
-  return { slots: updatedSlots };
+  return { ok: true };
 }
