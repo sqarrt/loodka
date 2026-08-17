@@ -10,7 +10,7 @@ export default async function HomePage() {
 
   if (!user) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-[1140px] flex-col items-center justify-center gap-5 px-10 text-center">
+      <main className="mx-auto flex w-full min-h-screen max-w-[1140px] flex-col items-center justify-center gap-5 px-10 text-center">
         <h1 className="font-display text-display-xl uppercase leading-none">
           Собери кейс
           <br />и разыграй друга
@@ -36,7 +36,7 @@ export default async function HomePage() {
   ];
 
   return (
-    <main className="mx-auto flex max-w-[1140px] flex-col gap-6 px-10 py-14">
+    <main className="mx-auto flex w-full max-w-[1140px] flex-col gap-6 px-10 py-14">
       <div className="flex flex-col gap-1 border-b border-line-soft pb-6">
         <span className="font-mono text-caps uppercase text-text-muted">
           с возвращением

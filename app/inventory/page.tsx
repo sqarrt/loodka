@@ -33,7 +33,7 @@ export default async function InventoryPage() {
   }));
 
   return (
-    <main className="mx-auto flex max-w-[1140px] flex-col gap-5 px-10 py-10">
+    <main className="mx-auto flex w-full max-w-[1140px] flex-col gap-5 px-10 py-10">
       <div className="flex flex-col gap-1">
         <span className="font-mono text-caps uppercase text-text-muted">
           {displayItems.length} предметов
