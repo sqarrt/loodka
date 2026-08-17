@@ -8,6 +8,12 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
   const { userId } = await params;
   const supabase = await createClient();
 
+  const {
+    data: { user: viewer },
+  } = await supabase.auth.getUser();
+  const viewerIsOwner = viewer?.id === userId;
+  const displayName = viewerIsOwner ? (viewer?.email?.split('@')[0] ?? 'игрок') : null;
+
   const { data: rows } = await supabase
     .from('inventory')
     .select('id, case_id, item_id, cashback_value, obtained_at')
@@ -15,10 +21,13 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
     .order('obtained_at', { ascending: false });
 
   const caseIds = [...new Set((rows ?? []).map((r) => r.case_id))];
-  const { data: cases } = await supabase.from('cases').select('id, items').in('id', caseIds);
+  const { data: inventoryCases } = await supabase
+    .from('cases')
+    .select('id, items')
+    .in('id', caseIds);
 
   const casesById: CaseItemsById = {};
-  for (const c of cases ?? []) {
+  for (const c of inventoryCases ?? []) {
     casesById[c.id] = c.items as CaseItem[];
   }
 
@@ -37,13 +46,26 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
     | null
   )[];
 
-  const itemsById = new Map(allItems.map((item) => [item.inventoryId, item]));
-  const showcaseItems = slots.map((id) => (id ? (itemsById.get(id) ?? null) : null));
+  const { data: ownCases } = await supabase
+    .from('cases')
+    .select('id, title, price, items')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  const cases = (ownCases ?? []).map((c) => ({
+    id: c.id,
+    title: c.title,
+    price: c.price,
+    itemCount: (c.items as unknown[]).length,
+  }));
 
   return (
-    <main>
-      <h1>Профиль</h1>
-      <ProfileTabs showcaseItems={showcaseItems} allItems={allItems} />
+    <main className="mx-auto flex w-full max-w-[1140px] flex-col gap-6 px-10 py-10">
+      <div className="flex flex-col gap-1">
+        <span className="font-mono text-caps uppercase text-text-muted">профиль</span>
+        <h1 className="font-display text-display-lg uppercase">{displayName ?? 'Профиль'}</h1>
+      </div>
+      <ProfileTabs slots={slots} allItems={allItems} cases={cases} viewerIsOwner={viewerIsOwner} />
     </main>
   );
 }

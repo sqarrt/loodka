@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/server';
 const ERROR_MESSAGES: Record<string, string> = {
   'not authenticated': 'Нужно войти через Google.',
   'case not found': 'Кейс не найден.',
-  'cannot open your own case for real': 'Нельзя открывать свой кейс за лудки — только демо.',
   'insufficient balance': 'Недостаточно лудок.',
 };
 

@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Raw Claude Design export (gitignored, not our code).
+    "design/**",
+    // Supabase CLI's local runtime scratch files.
+    "supabase/.temp/**",
   ]),
 ]);
 

@@ -25,8 +25,10 @@ export function pickWeightedRandom<T extends { weight: number }>(
   return items[items.length - 1];
 }
 
-export const REEL_LENGTH = 40;
-export const REEL_WINNER_INDEX = 35;
+export const REEL_LENGTH = 60;
+export const REEL_WINNER_INDEX = 52;
+export const CARD_WIDTH_PX = 120;
+export const CARD_PITCH_PX = 132; // 120px card + 12px gap
 
 export function buildReelStrip<T>(
   items: T[],
@@ -40,4 +42,12 @@ export function buildReelStrip<T>(
     strip.push(i === winnerIndex ? winner : items[Math.floor(random() * items.length)]);
   }
   return strip;
+}
+
+// Deterministic (no Math.random) so the resting reel — rendered on both the
+// server and the client during hydration — produces byte-identical output.
+// buildReelStrip's own randomness is fine once mounted, since it only ever
+// runs client-side from a click handler after that point.
+export function buildIdleStrip<T>(items: T[], length: number = REEL_LENGTH): T[] {
+  return Array.from({ length }, (_, i) => items[i % items.length]);
 }
