@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { computeOdds, type CaseItem } from '@/lib/cases';
 import { getRarityTier, type RarityTier } from '@/lib/rarity';
+import { resolveImageUrl } from '@/lib/storage';
 
 export type CatalogSort = 'popular' | 'new' | 'price' | 'alpha';
 export type SortDirection = 'asc' | 'desc';
@@ -36,6 +37,7 @@ export type CatalogCase = {
   openCount: number;
   createdAt: string;
   topRarity: RarityTier;
+  coverImageUrl: string | null;
 };
 
 export type CatalogFilters = {
@@ -79,6 +81,7 @@ type CaseRow = {
   user_id: string;
   open_count: number;
   created_at: string;
+  cover_image_path: string | null;
   case_items: CaseItem[];
 };
 
@@ -103,7 +106,9 @@ export async function fetchCatalogPage(
 
   let query = supabase
     .from('cases')
-    .select('id, title, price, user_id, open_count, created_at, case_items(id, name, image_path, weight)')
+    .select(
+      'id, title, price, user_id, open_count, created_at, cover_image_path, case_items(id, name, image_path, weight)'
+    )
     .is('deleted_at', null)
     .eq('case_items.removed', false);
   if (filters.title?.trim()) query = query.ilike('title', `%${filters.title.trim()}%`);
@@ -151,6 +156,7 @@ export async function fetchCatalogPage(
       openCount: row.open_count,
       createdAt: row.created_at,
       topRarity: rarest ? getRarityTier(rarest.probability) : 'common',
+      coverImageUrl: row.cover_image_path ? resolveImageUrl(supabase, row.cover_image_path) : null,
     };
   });
 

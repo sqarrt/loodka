@@ -18,7 +18,11 @@ function CaseCard({ c }: { c: CatalogCase }) {
   return (
     <div className="group flex flex-col overflow-hidden rounded-lg border border-line bg-surface-card transition-all hover:-translate-y-0.5 hover:border-line-strong hover:bg-surface-raised">
       <Link href={`/case/${c.id}`} className="contents">
-        <div className="relative flex h-[110px] items-end bg-[repeating-linear-gradient(135deg,var(--color-surface-raised)_0_8px,var(--color-line)_8px_16px)] p-2.5">
+        <div className="relative flex h-[110px] items-end overflow-hidden bg-[repeating-linear-gradient(135deg,var(--color-surface-raised)_0_8px,var(--color-line)_8px_16px)] p-2.5">
+          {c.coverImageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={c.coverImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          )}
           <div
             className="pointer-events-none absolute inset-x-0 bottom-0 h-14 opacity-20"
             style={{ background: `linear-gradient(to top, ${accent}, transparent)` }}
