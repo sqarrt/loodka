@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ShowcasePicker } from './ShowcasePicker';
 import { CurrencyIcon } from '@/components/CurrencyIcon';
 import { ItemCard } from '@/components/ItemCard';
@@ -20,17 +21,24 @@ type CaseSummary = {
   itemCount: number;
 };
 
+type ShowcaseSlot = { inventoryId: string | null; caseId: string | null };
+
+type CaseDisplay = { title: string; coverImageUrl: string | null };
+
 export function ProfileTabs({
   slots,
   allItems,
   cases,
+  caseDisplayById,
   viewerIsOwner,
 }: {
-  slots: (string | null)[];
+  slots: ShowcaseSlot[];
   allItems: DisplayItem[];
   cases: CaseSummary[];
+  caseDisplayById: Record<string, CaseDisplay>;
   viewerIsOwner: boolean;
 }) {
+  const router = useRouter();
   const [tab, setTab] = useState<'showcase' | 'inventory' | 'cases'>('showcase');
   const [pickerSlot, setPickerSlot] = useState<number | null>(null);
   const itemsById = new Map(allItems.map((item) => [item.inventoryId, item]));
@@ -57,21 +65,37 @@ export function ProfileTabs({
 
       {tab === 'showcase' && (
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-          {slots.map((inventoryId, i) => {
-            const item = inventoryId ? itemsById.get(inventoryId) : null;
+          {slots.map((slot, i) => {
+            const item = slot.inventoryId ? itemsById.get(slot.inventoryId) : null;
+            const caseDisplay = slot.caseId ? caseDisplayById[slot.caseId] : null;
+            const filled = Boolean(item || caseDisplay);
+
+            const onClick = viewerIsOwner
+              ? () => setPickerSlot(i)
+              : slot.caseId
+                ? () => router.push(`/case/${slot.caseId}`)
+                : undefined;
+
             return (
               <div
                 key={i}
-                onClick={viewerIsOwner ? () => setPickerSlot(i) : undefined}
+                onClick={onClick}
                 className={`flex flex-col overflow-hidden rounded-md border ${
-                  item ? 'border-line bg-surface-card' : 'border-dashed border-line-strong bg-inset'
-                } ${viewerIsOwner ? 'cursor-pointer hover:border-gold' : ''}`}
+                  filled ? 'border-line bg-surface-card' : 'border-dashed border-line-strong bg-inset'
+                } ${onClick ? 'cursor-pointer hover:border-gold' : ''}`}
               >
                 {item ? (
                   <>
                     <ItemThumb imageUrl={item.imageUrl} size="fill" />
                     <div className="px-2.5 py-2">
                       <span className="truncate text-caps font-semibold">{item.name}</span>
+                    </div>
+                  </>
+                ) : caseDisplay ? (
+                  <>
+                    <ItemThumb imageUrl={caseDisplay.coverImageUrl} size="fill" />
+                    <div className="px-2.5 py-2">
+                      <span className="truncate text-caps font-semibold">{caseDisplay.title}</span>
                     </div>
                   </>
                 ) : (
@@ -143,8 +167,8 @@ export function ProfileTabs({
       {pickerSlot !== null && (
         <ShowcasePicker
           slotIndex={pickerSlot}
-          allItems={allItems}
-          currentItemId={slots[pickerSlot]}
+          currentInventoryId={slots[pickerSlot].inventoryId}
+          currentCaseId={slots[pickerSlot].caseId}
           onClose={() => setPickerSlot(null)}
         />
       )}
