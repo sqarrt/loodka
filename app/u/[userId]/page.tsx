@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { resolveImageUrl } from '@/lib/storage';
-import { mapInventoryToDisplayItems, type CaseItemsById } from '@/lib/inventory';
-import type { CaseItem } from '@/lib/cases';
+import { mapInventoryToDisplayItems, type InventoryRowWithItem } from '@/lib/inventory';
 import { ProfileTabs } from './ProfileTabs';
 
 export default async function ProfilePage({ params }: { params: Promise<{ userId: string }> }) {
@@ -16,47 +15,40 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
 
   const { data: rows } = await supabase
     .from('inventory')
-    .select('id, case_id, item_id, cashback_value, obtained_at')
+    .select('id, cashback_value, obtained_at, case_items(name, image_path)')
     .eq('user_id', userId)
     .order('obtained_at', { ascending: false });
 
-  const caseIds = [...new Set((rows ?? []).map((r) => r.case_id))];
-  const { data: inventoryCases } = await supabase
-    .from('cases')
-    .select('id, items')
-    .in('id', caseIds);
-
-  const casesById: CaseItemsById = {};
-  for (const c of inventoryCases ?? []) {
-    casesById[c.id] = c.items as CaseItem[];
-  }
-
-  const allItems = mapInventoryToDisplayItems(rows ?? [], casesById).map((item) => ({
+  const allItems = mapInventoryToDisplayItems(
+    (rows ?? []) as unknown as InventoryRowWithItem[]
+  ).map((item) => ({
     ...item,
     imageUrl: item.image_path ? resolveImageUrl(supabase, item.image_path) : '',
   }));
 
-  const { data: showcase } = await supabase
-    .from('profile_showcases')
-    .select('slots')
-    .eq('user_id', userId)
-    .maybeSingle();
-  const slots = ((showcase?.slots as (string | null)[]) ?? Array(12).fill(null)) as (
-    | string
-    | null
-  )[];
+  const { data: showcaseRows } = await supabase
+    .from('showcase_slots')
+    .select('slot_index, inventory_id')
+    .eq('user_id', userId);
+
+  const slots: (string | null)[] = Array(12).fill(null);
+  for (const row of showcaseRows ?? []) {
+    slots[row.slot_index] = row.inventory_id;
+  }
 
   const { data: ownCases } = await supabase
     .from('cases')
-    .select('id, title, price, items')
+    .select('id, title, price, case_items(id)')
     .eq('user_id', userId)
+    .is('deleted_at', null)
+    .eq('case_items.removed', false)
     .order('created_at', { ascending: false });
 
   const cases = (ownCases ?? []).map((c) => ({
     id: c.id,
     title: c.title,
     price: c.price,
-    itemCount: (c.items as unknown[]).length,
+    itemCount: c.case_items.length,
   }));
 
   return (

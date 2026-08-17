@@ -20,11 +20,13 @@ export default async function CasePage({
 
   const { data: caseRow } = await supabase
     .from('cases')
-    .select('id, title, price, items, user_id')
+    .select('id, title, price, user_id, deleted_at, case_items(id, name, image_path, weight)')
     .eq('id', id)
+    .eq('case_items.removed', false)
+    .order('position', { referencedTable: 'case_items' })
     .maybeSingle();
 
-  if (!caseRow) notFound();
+  if (!caseRow || caseRow.deleted_at) notFound();
 
   const {
     data: { user },
@@ -45,7 +47,7 @@ export default async function CasePage({
   const canOpenReal = !!user;
   const displayName = user?.email?.split('@')[0] ?? 'Игрок';
 
-  const items = caseRow.items as CaseItem[];
+  const items = caseRow.case_items as CaseItem[];
   const itemsWithOdds = computeOdds(items).map((item) => ({
     ...item,
     imageUrl: resolveImageUrl(supabase, item.image_path),

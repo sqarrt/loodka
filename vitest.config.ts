@@ -11,5 +11,9 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./vitest.setup.ts'],
     testTimeout: 15000,
+    // Все тесты — интеграционные и бьют в один локальный стек Supabase.
+    // Параллельный запуск файлов гонял admin.auth.admin.createUser() и
+    // изредка ловил null user из-за состязания в GoTrue/Postgres.
+    fileParallelism: false,
   },
 });

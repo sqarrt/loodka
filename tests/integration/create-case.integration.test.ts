@@ -7,7 +7,7 @@ const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 const admin = createClient(url, serviceRoleKey);
 
-describe('case creation (data layer)', () => {
+describe('create_case_with_items (data layer)', () => {
   let client: SupabaseClient;
   let userId: string;
 
@@ -24,27 +24,44 @@ describe('case creation (data layer)', () => {
     await client.auth.signInWithPassword({ email, password });
   });
 
-  it('inserts a case with items owned by the signed-in user', async () => {
+  it('creates a case with items owned by the signed-in user', async () => {
     const items = [
-      { id: crypto.randomUUID(), name: 'Common thing', image_path: `${userId}/a.png`, weight: 9 },
-      { id: crypto.randomUUID(), name: 'Rare thing', image_path: `${userId}/b.png`, weight: 1 },
+      { name: 'Common thing', image_path: `${userId}/a.png`, weight: 9 },
+      { name: 'Rare thing', image_path: `${userId}/b.png`, weight: 1 },
     ];
 
-    const { data, error } = await client
-      .from('cases')
-      .insert({ user_id: userId, title: 'My Case', price: 10, items })
-      .select('id, title, price, items')
-      .single();
+    const { data: caseId, error } = await client.rpc('create_case_with_items', {
+      p_title: 'My Case',
+      p_price: 10,
+      p_items: items,
+    });
 
     expect(error).toBeNull();
-    expect(data!.title).toBe('My Case');
-    expect(data!.items).toHaveLength(2);
+
+    const { data: caseRow } = await admin
+      .from('cases')
+      .select('title, price, user_id')
+      .eq('id', caseId)
+      .single();
+    expect(caseRow!.title).toBe('My Case');
+    expect(caseRow!.user_id).toBe(userId);
+
+    const { data: itemRows } = await admin
+      .from('case_items')
+      .select('name, weight, position')
+      .eq('case_id', caseId)
+      .order('position');
+    expect(itemRows).toHaveLength(2);
+    expect(itemRows![0].name).toBe('Common thing');
+    expect(itemRows![1].name).toBe('Rare thing');
   });
 
   it('rejects a price below 1 (DB check constraint)', async () => {
-    const { error } = await client
-      .from('cases')
-      .insert({ user_id: userId, title: 'Bad Case', price: 0, items: [] });
+    const { error } = await client.rpc('create_case_with_items', {
+      p_title: 'Bad Case',
+      p_price: 0,
+      p_items: [],
+    });
 
     expect(error).not.toBeNull();
   });

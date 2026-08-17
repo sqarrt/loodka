@@ -1,14 +1,9 @@
-import type { CaseItem } from './cases';
-
-export type InventoryRow = {
+export type InventoryRowWithItem = {
   id: string;
-  case_id: string;
-  item_id: string;
   cashback_value: number;
   obtained_at: string;
+  case_items: { name: string; image_path: string } | null;
 };
-
-export type CaseItemsById = Record<string, CaseItem[]>;
 
 export type InventoryDisplayItem = {
   inventoryId: string;
@@ -18,18 +13,12 @@ export type InventoryDisplayItem = {
   obtainedAt: string;
 };
 
-export function mapInventoryToDisplayItems(
-  rows: InventoryRow[],
-  casesById: CaseItemsById
-): InventoryDisplayItem[] {
-  return rows.map((row) => {
-    const item = casesById[row.case_id]?.find((i) => i.id === row.item_id);
-    return {
-      inventoryId: row.id,
-      name: item?.name ?? 'Неизвестный предмет',
-      image_path: item?.image_path ?? '',
-      cashbackValue: row.cashback_value,
-      obtainedAt: row.obtained_at,
-    };
-  });
+export function mapInventoryToDisplayItems(rows: InventoryRowWithItem[]): InventoryDisplayItem[] {
+  return rows.map((row) => ({
+    inventoryId: row.id,
+    name: row.case_items?.name ?? 'Неизвестный предмет',
+    image_path: row.case_items?.image_path ?? '',
+    cashbackValue: row.cashback_value,
+    obtainedAt: row.obtained_at,
+  }));
 }

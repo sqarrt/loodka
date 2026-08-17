@@ -11,10 +11,33 @@ async function createSignedInUser(email: string, balance: number) {
   const password = 'test-password-123';
   const { data } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
   const userId = data.user!.id;
-  await admin.from('profiles').insert({ user_id: userId, balance, last_daily_claim_at: '2026-08-16' });
+  await admin.from('profiles').insert({
+    user_id: userId,
+    balance,
+    last_daily_claim_at: '2026-08-16',
+    display_name: email.split('@')[0],
+  });
   const client = createClient(url, anonKey);
   await client.auth.signInWithPassword({ email, password });
   return { userId, client };
+}
+
+async function createCaseWithItems(
+  authorId: string,
+  title: string,
+  price: number,
+  items: { name: string; image_path: string; weight: number }[]
+) {
+  const { data: caseRow } = await admin
+    .from('cases')
+    .insert({ user_id: authorId, title, price })
+    .select('id')
+    .single();
+  const { data: itemRows } = await admin
+    .from('case_items')
+    .insert(items.map((item, i) => ({ case_id: caseRow!.id, ...item, position: i })))
+    .select('id, name, image_path, weight');
+  return { caseId: caseRow!.id as string, items: itemRows! };
 }
 
 describe('open_case_for_real', () => {
@@ -22,20 +45,13 @@ describe('open_case_for_real', () => {
     const author = await createSignedInUser(`author-${Date.now()}@example.com`, 0);
     const opener = await createSignedInUser(`opener-${Date.now()}@example.com`, 100);
 
-    // Equal weights: cashback is identical either way, so the assertion
-    // doesn't depend on which item the random roll picks.
-    const items = [
-      { id: crypto.randomUUID(), name: 'A', image_path: 'a.png', weight: 1 },
-      { id: crypto.randomUUID(), name: 'B', image_path: 'b.png', weight: 1 },
-    ];
-    const { data: caseRow } = await admin
-      .from('cases')
-      .insert({ user_id: author.userId, title: 'Economy Test', price: 10, items })
-      .select('id')
-      .single();
+    const { caseId, items } = await createCaseWithItems(author.userId, 'Economy Test', 10, [
+      { name: 'A', image_path: 'a.png', weight: 1 },
+      { name: 'B', image_path: 'b.png', weight: 1 },
+    ]);
 
     const { data, error } = await opener.client.rpc('open_case_for_real', {
-      p_case_id: caseRow!.id,
+      p_case_id: caseId,
     });
 
     expect(error).toBeNull();
@@ -55,7 +71,7 @@ describe('open_case_for_real', () => {
       .from('inventory')
       .select('item_id, cashback_value')
       .eq('user_id', opener.userId)
-      .eq('case_id', caseRow!.id);
+      .eq('case_id', caseId);
     expect(inventoryRows).toHaveLength(1);
     expect(inventoryRows![0].item_id).toBe(result.item_id);
   });
@@ -64,18 +80,13 @@ describe('open_case_for_real', () => {
     const author = await createSignedInUser(`author2-${Date.now()}@example.com`, 0);
     const opener = await createSignedInUser(`opener2-${Date.now()}@example.com`, 100);
 
-    const items = [
-      { id: crypto.randomUUID(), name: 'Common', image_path: 'c.png', weight: 9 },
-      { id: crypto.randomUUID(), name: 'Rare', image_path: 'r.png', weight: 1 },
-    ];
     const price = 10;
-    const { data: caseRow } = await admin
-      .from('cases')
-      .insert({ user_id: author.userId, title: 'Rarity Test', price, items })
-      .select('id')
-      .single();
+    const { caseId, items } = await createCaseWithItems(author.userId, 'Rarity Test', price, [
+      { name: 'Common', image_path: 'c.png', weight: 9 },
+      { name: 'Rare', image_path: 'r.png', weight: 1 },
+    ]);
 
-    const { data } = await opener.client.rpc('open_case_for_real', { p_case_id: caseRow!.id });
+    const { data } = await opener.client.rpc('open_case_for_real', { p_case_id: caseId });
     const result = data![0];
 
     const totalWeight = items.reduce((s, i) => s + i.weight, 0);
@@ -88,31 +99,24 @@ describe('open_case_for_real', () => {
 
   it('allows the author to open their own case for real, netting only the non-author share', async () => {
     const author = await createSignedInUser(`author3-${Date.now()}@example.com`, 100);
-    const items = [
-      { id: crypto.randomUUID(), name: 'A', image_path: 'a.png', weight: 1 },
-      { id: crypto.randomUUID(), name: 'B', image_path: 'b.png', weight: 1 },
-    ];
-    const { data: caseRow } = await admin
-      .from('cases')
-      .insert({ user_id: author.userId, title: 'Self Open Test', price: 10, items })
-      .select('id')
-      .single();
+    const { caseId } = await createCaseWithItems(author.userId, 'Self Open Test', 10, [
+      { name: 'A', image_path: 'a.png', weight: 1 },
+      { name: 'B', image_path: 'b.png', weight: 1 },
+    ]);
 
     const { data, error } = await author.client.rpc('open_case_for_real', {
-      p_case_id: caseRow!.id,
+      p_case_id: caseId,
     });
 
     expect(error).toBeNull();
     const result = data![0];
-    // -price (10) +author_payout (floor(0.5*10)=5): the price deduction and
-    // the author payout land on the same account, netting -5, not -10.
     expect(result.new_balance).toBe(95);
 
     const { data: inventoryRows } = await admin
       .from('inventory')
       .select('item_id')
       .eq('user_id', author.userId)
-      .eq('case_id', caseRow!.id);
+      .eq('case_id', caseId);
     expect(inventoryRows).toHaveLength(1);
     expect(inventoryRows![0].item_id).toBe(result.item_id);
   });
@@ -120,17 +124,12 @@ describe('open_case_for_real', () => {
   it('rejects an opener with insufficient balance', async () => {
     const author = await createSignedInUser(`author4-${Date.now()}@example.com`, 0);
     const opener = await createSignedInUser(`opener4-${Date.now()}@example.com`, 1);
-    const items = [
-      { id: crypto.randomUUID(), name: 'A', image_path: 'a.png', weight: 1 },
-      { id: crypto.randomUUID(), name: 'B', image_path: 'b.png', weight: 1 },
-    ];
-    const { data: caseRow } = await admin
-      .from('cases')
-      .insert({ user_id: author.userId, title: 'Poor Test', price: 10, items })
-      .select('id')
-      .single();
+    const { caseId } = await createCaseWithItems(author.userId, 'Poor Test', 10, [
+      { name: 'A', image_path: 'a.png', weight: 1 },
+      { name: 'B', image_path: 'b.png', weight: 1 },
+    ]);
 
-    const { error } = await opener.client.rpc('open_case_for_real', { p_case_id: caseRow!.id });
+    const { error } = await opener.client.rpc('open_case_for_real', { p_case_id: caseId });
     expect(error).not.toBeNull();
   });
 });
@@ -139,22 +138,17 @@ describe('cash_back_item', () => {
   it('deletes the inventory row and credits the balance', async () => {
     const author = await createSignedInUser(`author5-${Date.now()}@example.com`, 0);
     const opener = await createSignedInUser(`opener5-${Date.now()}@example.com`, 100);
-    const items = [
-      { id: crypto.randomUUID(), name: 'A', image_path: 'a.png', weight: 1 },
-      { id: crypto.randomUUID(), name: 'B', image_path: 'b.png', weight: 1 },
-    ];
-    const { data: caseRow } = await admin
-      .from('cases')
-      .insert({ user_id: author.userId, title: 'Cashback Test', price: 10, items })
-      .select('id')
-      .single();
+    const { caseId } = await createCaseWithItems(author.userId, 'Cashback Test', 10, [
+      { name: 'A', image_path: 'a.png', weight: 1 },
+      { name: 'B', image_path: 'b.png', weight: 1 },
+    ]);
 
-    await opener.client.rpc('open_case_for_real', { p_case_id: caseRow!.id });
+    await opener.client.rpc('open_case_for_real', { p_case_id: caseId });
     const { data: inventoryRows } = await admin
       .from('inventory')
       .select('id, cashback_value')
       .eq('user_id', opener.userId)
-      .eq('case_id', caseRow!.id);
+      .eq('case_id', caseId);
     const inventoryId = inventoryRows![0].id;
     const cashbackValue = inventoryRows![0].cashback_value;
 
@@ -180,22 +174,17 @@ describe('cash_back_item', () => {
     const author = await createSignedInUser(`author6-${Date.now()}@example.com`, 0);
     const opener = await createSignedInUser(`opener6-${Date.now()}@example.com`, 100);
     const stranger = await createSignedInUser(`stranger6-${Date.now()}@example.com`, 100);
-    const items = [
-      { id: crypto.randomUUID(), name: 'A', image_path: 'a.png', weight: 1 },
-      { id: crypto.randomUUID(), name: 'B', image_path: 'b.png', weight: 1 },
-    ];
-    const { data: caseRow } = await admin
-      .from('cases')
-      .insert({ user_id: author.userId, title: 'Steal Test', price: 10, items })
-      .select('id')
-      .single();
+    const { caseId } = await createCaseWithItems(author.userId, 'Steal Test', 10, [
+      { name: 'A', image_path: 'a.png', weight: 1 },
+      { name: 'B', image_path: 'b.png', weight: 1 },
+    ]);
 
-    await opener.client.rpc('open_case_for_real', { p_case_id: caseRow!.id });
+    await opener.client.rpc('open_case_for_real', { p_case_id: caseId });
     const { data: inventoryRows } = await admin
       .from('inventory')
       .select('id')
       .eq('user_id', opener.userId)
-      .eq('case_id', caseRow!.id);
+      .eq('case_id', caseId);
 
     const { error } = await stranger.client.rpc('cash_back_item', {
       p_inventory_id: inventoryRows![0].id,

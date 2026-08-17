@@ -17,16 +17,12 @@ export async function claimDailyBonus() {
     .eq('user_id', user.id)
     .maybeSingle();
 
-  const today = new Date().toISOString().slice(0, 10);
+  // The profile is created at login time (see app/auth/callback/route.ts),
+  // so it should always exist by the time this runs. If it's somehow
+  // missing, there's nothing to grant a bonus to.
+  if (!profile) return null;
 
-  if (!profile) {
-    const { data: created } = await supabase
-      .from('profiles')
-      .insert({ user_id: user.id, balance: DAILY_BONUS_AMOUNT, last_daily_claim_at: today })
-      .select('balance, last_daily_claim_at')
-      .single();
-    return created;
-  }
+  const today = new Date().toISOString().slice(0, 10);
 
   if (shouldGrantDailyBonus(profile.last_daily_claim_at, today)) {
     const { data: updated } = await supabase
@@ -35,8 +31,8 @@ export async function claimDailyBonus() {
       .eq('user_id', user.id)
       .select('balance, last_daily_claim_at')
       .single();
-    return updated;
+    return updated ? { ...updated, bonusGranted: true as const } : null;
   }
 
-  return profile;
+  return { ...profile, bonusGranted: false as const };
 }
