@@ -23,12 +23,16 @@ export async function createCase(
   const weights = formData.getAll('itemWeight').map(Number);
   const descriptions = formData.getAll('itemDescription').map(String);
   const files = formData.getAll('itemImage').filter((f): f is File => f instanceof File && f.size > 0);
+  const coverFile = formData.get('coverImage');
 
   if (!title) return { error: 'Укажи название кейса.' };
   if (!Number.isInteger(price) || price < 1) return { error: 'Цена крутки должна быть целым числом от 1.' };
   if (names.length < 2) return { error: 'Нужно минимум 2 предмета.' };
   if (files.length !== names.length) return { error: 'Для каждого предмета нужна картинка.' };
   if (weights.some((w) => !Number.isFinite(w) || w <= 0)) return { error: 'Вес каждого предмета должен быть больше 0.' };
+  if (!(coverFile instanceof File) || coverFile.size === 0) return { error: 'Нужна обложка кейса.' };
+
+  const coverPath = await uploadItemImage(supabase, user.id, coverFile);
 
   const items = [];
   for (let i = 0; i < names.length; i++) {
@@ -45,6 +49,7 @@ export async function createCase(
     p_title: title,
     p_price: price,
     p_items: items,
+    p_cover_image_path: coverPath,
   });
 
   if (error) return { error: error.message };

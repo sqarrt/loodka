@@ -14,11 +14,18 @@ const inputClass =
 export default function NewCasePage() {
   const [state, formAction] = useActionState(createCase, null);
   const [previews, setPreviews] = useState<Record<number, string>>({});
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
 
   const handleFileChange = (i: number) => (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setPreviews((prev) => ({ ...prev, [i]: URL.createObjectURL(file) }));
+  };
+
+  const handleCoverChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCoverPreview(URL.createObjectURL(file));
   };
 
   return (
@@ -50,6 +57,26 @@ export default function NewCasePage() {
             </div>
           </label>
         </div>
+
+        <label className="flex flex-col gap-2">
+          <span className="font-mono text-caps uppercase text-text-muted">обложка кейса</span>
+          <label className="relative flex h-[110px] w-[220px] cursor-pointer items-center justify-center overflow-hidden rounded-md border border-dashed border-line-strong bg-inset text-center font-mono text-[10px] text-text-dim hover:border-gold hover:text-gold">
+            {coverPreview ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={coverPreview} alt="" className="h-full w-full object-cover" />
+            ) : (
+              'загрузить обложку'
+            )}
+            <input
+              name="coverImage"
+              type="file"
+              accept="image/*"
+              required
+              onChange={handleCoverChange}
+              className="absolute inset-0 cursor-pointer opacity-0"
+            />
+          </label>
+        </label>
 
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
