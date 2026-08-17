@@ -3,6 +3,7 @@ import {
   computeOdds,
   pickWeightedRandom,
   buildReelStrip,
+  buildIdleStrip,
   REEL_LENGTH,
   REEL_WINNER_INDEX,
 } from './cases';
@@ -48,5 +49,28 @@ describe('buildReelStrip', () => {
   it('fills non-winner slots by sampling from the item pool', () => {
     const strip = buildReelStrip(items, items[2], () => 0, 5, 2);
     expect(strip).toEqual([items[0], items[0], items[2], items[0], items[0]]);
+  });
+});
+
+describe('buildIdleStrip', () => {
+  it('cycles through items deterministically, with no randomness involved', () => {
+    const strip = buildIdleStrip(items, 7);
+    expect(strip).toEqual([
+      items[0],
+      items[1],
+      items[2],
+      items[0],
+      items[1],
+      items[2],
+      items[0],
+    ]);
+  });
+
+  it('defaults to REEL_LENGTH items', () => {
+    expect(buildIdleStrip(items)).toHaveLength(REEL_LENGTH);
+  });
+
+  it('produces identical output across repeated calls (SSR/CSR must match)', () => {
+    expect(buildIdleStrip(items)).toEqual(buildIdleStrip(items));
   });
 });

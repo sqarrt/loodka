@@ -43,3 +43,11 @@ export function buildReelStrip<T>(
   }
   return strip;
 }
+
+// Deterministic (no Math.random) so the resting reel — rendered on both the
+// server and the client during hydration — produces byte-identical output.
+// buildReelStrip's own randomness is fine once mounted, since it only ever
+// runs client-side from a click handler after that point.
+export function buildIdleStrip<T>(items: T[], length: number = REEL_LENGTH): T[] {
+  return Array.from({ length }, (_, i) => items[i % items.length]);
+}

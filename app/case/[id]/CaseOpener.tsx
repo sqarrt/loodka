@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   pickWeightedRandom,
   buildReelStrip,
+  buildIdleStrip,
   REEL_WINNER_INDEX,
   CARD_PITCH_PX,
   CARD_WIDTH_PX,
@@ -46,18 +47,31 @@ export function CaseOpener({
   prankItemId?: string | null;
   prankBy?: string | null;
 }) {
-  const [strip, setStrip] = useState<ItemWithImage[]>(() =>
-    buildReelStrip(items, items[0])
-  );
+  const [strip, setStrip] = useState<ItemWithImage[]>(() => buildIdleStrip(items));
   const [offset, setOffset] = useState(IDLE_OFFSET_PX);
   const [transitioning, setTransitioning] = useState(false);
   const [phase, setPhase] = useState<'idle' | 'spinning' | 'result'>('idle');
   const [result, setResult] = useState<ItemWithImage | null>(null);
   const [balance, setBalance] = useState(initialBalance);
   const [error, setError] = useState<string | null>(null);
-  const [pranked, setPranked] = useState(!!prankItemId);
-  const [resultIsPranked, setResultIsPranked] = useState(false);
   const router = useRouter();
+
+  // Captured once from props on mount, so it survives the URL scrub below
+  // (which re-renders the page without ?prank=/&by=, nulling the props).
+  const [prankState] = useState(() =>
+    prankItemId ? { itemId: prankItemId, by: prankBy ?? null } : null
+  );
+  const [pranked, setPranked] = useState(!!prankState);
+  const [resultIsPranked, setResultIsPranked] = useState(false);
+
+  // Mask the link immediately on load, not just after it's opened — a
+  // pranked link should look like any other case link at a glance.
+  useEffect(() => {
+    if (prankState) {
+      router.replace(`/case/${caseId}`, { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const animateTo = (winner: ItemWithImage) => {
     const reel = buildReelStrip(items, winner);
@@ -88,15 +102,14 @@ export function CaseOpener({
   };
 
   // A pending prank overrides either button: no balance touched, no server
-  // call, always lands on the pranked item. Consumed after one open — the
-  // query param is scrubbed from the URL too, so a refresh can't re-arm it.
+  // call, always lands on the pranked item. Consumed after one open (the
+  // URL was already scrubbed on mount, so a refresh can't re-arm it).
   const consumePrank = (): ItemWithImage | undefined => {
-    if (!pranked || !prankItemId) return undefined;
-    const forced = items.find((item) => item.id === prankItemId);
+    if (!pranked || !prankState) return undefined;
+    const forced = items.find((item) => item.id === prankState.itemId);
     if (!forced) return undefined;
     setPranked(false);
     setResultIsPranked(true);
-    router.replace(`/case/${caseId}`, { scroll: false });
     return forced;
   };
 
@@ -225,7 +238,7 @@ export function CaseOpener({
             </span>
             <span className="text-body text-text-secondary">
               {resultIsPranked
-                ? `Тебя разыграл ${prankBy || 'друг'}! Предмет не сохранится в инвентаре. Можешь открыть ещё раз — уже по-настоящему.`
+                ? `Тебя разыграл ${prankState?.by || 'друг'}! Предмет не сохранится в инвентаре. Можешь открыть ещё раз — уже по-настоящему.`
                 : canOpenReal
                   ? 'Предмет уже в инвентаре. Можно поставить на витрину или обменять на лудки.'
                   : 'Демо-открытие — лудки не списаны, предмет не добавлен в инвентарь.'}
