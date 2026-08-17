@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { resolveImageUrl } from '@/lib/storage';
 import { mapInventoryToDisplayItems, type InventoryRowWithItem } from '@/lib/inventory';
+import { progressForSpend } from '@/lib/xp';
 import { ProfileTabs } from './ProfileTabs';
 
 export default async function ProfilePage({ params }: { params: Promise<{ userId: string }> }) {
@@ -12,6 +13,13 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
   } = await supabase.auth.getUser();
   const viewerIsOwner = viewer?.id === userId;
   const displayName = viewerIsOwner ? (viewer?.email?.split('@')[0] ?? 'игрок') : null;
+
+  const { data: viewedProfile } = await supabase
+    .from('profiles')
+    .select('total_spent')
+    .eq('user_id', userId)
+    .maybeSingle();
+  const { level, intoLevel, forLevel, fraction } = progressForSpend(viewedProfile?.total_spent ?? 0);
 
   const { data: rows } = await supabase
     .from('inventory')
@@ -69,6 +77,20 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
       <div className="flex flex-col gap-1">
         <span className="font-mono text-caps uppercase text-text-muted">профиль</span>
         <h1 className="font-display text-display-lg uppercase">{displayName ?? 'Профиль'}</h1>
+        <div className="flex flex-col gap-1.5 pt-2">
+          <div className="flex items-center gap-2 font-mono text-caps text-text-muted">
+            <span className="text-gold">уровень {level}</span>
+            <span>
+              {intoLevel} / {Math.round(forLevel)}
+            </span>
+          </div>
+          <div className="h-1.5 w-56 overflow-hidden rounded-full bg-inset">
+            <div
+              className="h-full rounded-full bg-gold"
+              style={{ width: `${Math.min(fraction, 1) * 100}%` }}
+            />
+          </div>
+        </div>
       </div>
       <ProfileTabs
         slots={slots}
