@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server';
-import { claimDailyBonus } from '@/app/actions/claim-daily-bonus';
 import { GoogleLoginButton } from '@/components/GoogleLoginButton';
 
 export default async function HomePage() {
@@ -27,7 +26,6 @@ export default async function HomePage() {
     );
   }
 
-  await claimDailyBonus();
   const displayName = user.email?.split('@')[0] ?? 'игрок';
 
   const links = [
