@@ -28,6 +28,13 @@ export default async function CasePage({
 
   if (!caseRow || caseRow.deleted_at) notFound();
 
+  const { data: authorProfile } = await supabase
+    .from('profiles')
+    .select('display_name')
+    .eq('user_id', caseRow.user_id)
+    .maybeSingle();
+  const authorName = authorProfile?.display_name ?? 'игрок';
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -65,6 +72,9 @@ export default async function CasePage({
           <h1 className="font-display text-display-xl uppercase leading-none">
             {caseRow.title}
           </h1>
+          <a href={`/u/${caseRow.user_id}`} className="w-fit font-mono text-caps text-text-secondary hover:text-gold">
+            @{authorName}
+          </a>
         </div>
         <div className="flex flex-col items-end gap-1">
           <span className="font-mono text-caps uppercase text-text-muted">
