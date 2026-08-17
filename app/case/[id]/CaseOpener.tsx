@@ -7,6 +7,7 @@ import {
   buildReelStrip,
   REEL_WINNER_INDEX,
   CARD_PITCH_PX,
+  CARD_WIDTH_PX,
 } from '@/lib/cases';
 import { openCaseForReal } from '@/app/actions/open-case-for-real';
 import { ItemCard } from '@/components/ItemCard';
@@ -22,6 +23,11 @@ type ItemWithImage = {
 };
 
 const SPIN_DURATION_MS = 6200;
+// Enough to keep cards filling the track left of the marker at rest too,
+// not just after a spin — the marker sits at the horizontal center, and
+// the strip's own left edge starts there, so anything less leaves a
+// visible empty gap to the left before the first spin.
+const IDLE_OFFSET_PX = 5 * CARD_PITCH_PX;
 
 export function CaseOpener({
   caseId,
@@ -36,8 +42,10 @@ export function CaseOpener({
   canOpenReal: boolean;
   initialBalance: number | null;
 }) {
-  const [strip, setStrip] = useState<ItemWithImage[] | null>(null);
-  const [offset, setOffset] = useState(0);
+  const [strip, setStrip] = useState<ItemWithImage[]>(() =>
+    buildReelStrip(items, items[0])
+  );
+  const [offset, setOffset] = useState(IDLE_OFFSET_PX);
   const [transitioning, setTransitioning] = useState(false);
   const [phase, setPhase] = useState<'idle' | 'spinning' | 'result'>('idle');
   const [result, setResult] = useState<ItemWithImage | null>(null);
@@ -48,7 +56,10 @@ export function CaseOpener({
   const animateTo = (winner: ItemWithImage) => {
     const reel = buildReelStrip(items, winner);
     const jitter = (Math.random() - 0.5) * 76;
-    const target = REEL_WINNER_INDEX * CARD_PITCH_PX + jitter;
+    // +CARD_WIDTH_PX/2 centers the winner card under the fixed marker;
+    // without it the marker aligns to the card's left edge instead, so
+    // jitter alone could land it in the gap before the previous card.
+    const target = REEL_WINNER_INDEX * CARD_PITCH_PX + CARD_WIDTH_PX / 2 + jitter;
 
     // Reset must land in its own paint with the transition off, or the
     // browser animates the reset itself instead of the spin (only visible
@@ -116,7 +127,7 @@ export function CaseOpener({
                 : 'none',
             }}
           >
-            {(strip ?? items).map((item, i) => (
+            {strip.map((item, i) => (
               <ItemCard key={i} name={item.name} imageUrl={item.imageUrl} size="sm" />
             ))}
           </div>
