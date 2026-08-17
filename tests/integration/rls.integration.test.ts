@@ -42,7 +42,7 @@ describe('RLS policies', () => {
 
     const { data, error } = await admin
       .from('cases')
-      .insert({ user_id: ownerId, title: 'Test Case', price: 10, items: [] })
+      .insert({ user_id: ownerId, title: 'Test Case', price: 10 })
       .select('id')
       .single();
     if (error) throw error;
