@@ -3,7 +3,6 @@ import { Unbounded, Manrope, JetBrains_Mono } from "next/font/google";
 import { Header } from "@/components/Header";
 import { DailyBonusModal } from "@/components/DailyBonusModal";
 import { claimDailyBonus } from "@/app/actions/claim-daily-bonus";
-import { DAILY_BONUS_AMOUNT } from "@/lib/daily-bonus";
 import "./globals.css";
 
 const unbounded = Unbounded({
@@ -38,7 +37,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="flex min-h-screen flex-col font-sans">
         <Header />
-        {bonusResult?.bonusGranted && <DailyBonusModal amount={DAILY_BONUS_AMOUNT} />}
+        {bonusResult?.bonusGranted && (
+          <DailyBonusModal amount={bonusResult.bonusAmount} totalSpent={bonusResult.total_spent} />
+        )}
         <div className="flex flex-1 flex-col">{children}</div>
       </body>
     </html>
