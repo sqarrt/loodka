@@ -4,6 +4,7 @@ import { useActionState, useState, type ChangeEvent } from 'react';
 import { createCase } from '@/app/actions/create-case';
 import { Button } from '@/components/Button';
 import { CurrencyIcon } from '@/components/CurrencyIcon';
+import { ItemThumb } from '@/components/ItemThumb';
 
 const emptyItems = [0, 1];
 
@@ -64,13 +65,14 @@ export default function NewCasePage() {
               key={i}
               className="flex flex-col gap-2 rounded-lg border border-line bg-surface-card p-3 sm:grid sm:grid-cols-[84px_1fr_110px] sm:items-center"
             >
-              <label className="relative flex h-[62px] w-[84px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-md border border-dashed border-line-strong bg-inset text-center font-mono text-[9px] leading-tight text-text-dim hover:border-gold hover:text-gold">
-                {previews[i] ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={previews[i]} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  'фото'
-                )}
+              <label className="relative block h-fit w-fit shrink-0 cursor-pointer">
+                <ItemThumb imageUrl={previews[i]} size="xs">
+                  {!previews[i] && (
+                    <span className="pointer-events-none font-mono text-[9px] leading-tight text-text-dim">
+                      фото
+                    </span>
+                  )}
+                </ItemThumb>
                 <input
                   name="itemImage"
                   type="file"

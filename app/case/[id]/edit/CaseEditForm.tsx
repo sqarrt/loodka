@@ -4,6 +4,7 @@ import { useActionState, useMemo, useState, type ChangeEvent, type FormEvent } f
 import { updateCase, deleteCase } from '@/app/actions/edit-case';
 import { Button } from '@/components/Button';
 import { CurrencyIcon } from '@/components/CurrencyIcon';
+import { ItemThumb } from '@/components/ItemThumb';
 import { getRarityTier, RARITY_INFO } from '@/lib/rarity';
 
 type InitialItem = {
@@ -211,12 +212,9 @@ export function CaseEditForm({
                     item.removed ? 'border-danger/30 bg-danger/5 opacity-75' : 'border-line bg-surface-card'
                   }`}
                 >
-                  <div className="flex h-[62px] w-[84px] shrink-0 items-center justify-center overflow-hidden rounded-md border border-line-strong bg-inset">
-                    {item.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={item.imageUrl} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <label className="relative flex h-full w-full cursor-pointer items-center justify-center text-center font-mono text-[9px] leading-tight text-text-dim hover:text-gold">
+                  <ItemThumb imageUrl={item.imageUrl} size="xs">
+                    {!item.imageUrl && (
+                      <label className="absolute inset-0 flex cursor-pointer items-center justify-center text-center font-mono text-[9px] leading-tight text-text-dim hover:text-gold">
                         фото
                         <input
                           type="file"
@@ -227,7 +225,7 @@ export function CaseEditForm({
                         />
                       </label>
                     )}
-                  </div>
+                  </ItemThumb>
 
                   {item.removed ? (
                     <span className="text-body text-text-muted line-through">{item.name}</span>
