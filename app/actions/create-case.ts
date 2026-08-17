@@ -32,16 +32,16 @@ export async function createCase(
   const items = [];
   for (let i = 0; i < names.length; i++) {
     const imagePath = await uploadItemImage(supabase, user.id, files[i]);
-    items.push({ id: crypto.randomUUID(), name: names[i], image_path: imagePath, weight: weights[i] });
+    items.push({ name: names[i], image_path: imagePath, weight: weights[i] });
   }
 
-  const { data, error } = await supabase
-    .from('cases')
-    .insert({ user_id: user.id, title, price, items })
-    .select('id')
-    .single();
+  const { data: caseId, error } = await supabase.rpc('create_case_with_items', {
+    p_title: title,
+    p_price: price,
+    p_items: items,
+  });
 
   if (error) return { error: error.message };
 
-  redirect(`/case/${data.id}`);
+  redirect(`/case/${caseId}`);
 }
