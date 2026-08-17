@@ -1,9 +1,9 @@
 import { getRarityTier, RARITY_INFO } from '@/lib/rarity';
 
 const SIZE_CLASSES = {
-  lg: { card: 'w-44', art: 'h-30' }, // 176px / 120px
-  md: { card: 'w-37', art: 'h-26' }, // 148px / 106px
-  sm: { card: 'w-30', art: 'h-22' }, // 120px / 90px
+  lg: { card: 'w-44', art: 'h-30', imgPad: 'p-3' }, // 176px / 120px
+  md: { card: 'w-37', art: 'h-26', imgPad: 'p-2' }, // 148px / 106px
+  sm: { card: 'w-30', art: 'h-22', imgPad: 'p-1.5' }, // 120px / 90px
 } as const;
 
 export function ItemCard({
@@ -21,7 +21,7 @@ export function ItemCard({
 }) {
   const tier = probability !== undefined ? getRarityTier(probability) : 'common';
   const info = RARITY_INFO[tier];
-  const { card, art } = SIZE_CLASSES[size];
+  const { card, art, imgPad } = SIZE_CLASSES[size];
 
   if (state === 'loading') {
     return (
@@ -49,7 +49,7 @@ export function ItemCard({
       >
         {imageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt={name} className="h-full w-full object-cover p-2" />
+          <img src={imageUrl} alt={name} className={`h-full w-full object-cover ${imgPad}`} />
         )}
       </div>
       <div className="flex flex-col gap-1.5 p-3">

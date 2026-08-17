@@ -171,7 +171,7 @@ export function CaseOpener({
           className="flex items-center gap-6 rounded-lg border bg-inset p-6"
           style={{ borderColor: 'var(--color-gold)' }}
         >
-          <div className="w-38 shrink-0">
+          <div className="shrink-0">
             <ItemCard name={result.name} imageUrl={result.imageUrl} size="lg" />
           </div>
           <div className="flex flex-1 flex-col gap-2">

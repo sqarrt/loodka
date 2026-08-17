@@ -42,7 +42,7 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
   }));
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-[1140px] flex-col gap-7 px-10 py-10">
+    <main className="mx-auto flex max-w-[1140px] flex-col gap-7 px-10 py-10">
       <div className="flex items-end justify-between gap-6">
         <div className="flex flex-col gap-2">
           <span className="font-mono text-caps uppercase text-text-muted">
@@ -70,7 +70,7 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
         initialBalance={balance}
       />
 
-      <div className="mt-auto flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
         <h2 className="font-display text-heading uppercase">Что может выпасть</h2>
         <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-6">
           {itemsWithOdds.map((item) => (
