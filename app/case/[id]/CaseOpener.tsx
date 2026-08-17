@@ -198,7 +198,7 @@ export function CaseOpener({
               </span>
             ) : (
               <>
-                Открыть за <CurrencyIcon size={15} /> {price}
+                Открыть за {price} <CurrencyIcon size={20} />
               </>
             )}
           </Button>
@@ -211,11 +211,11 @@ export function CaseOpener({
             {phase === 'spinning' ? 'Крутим…' : 'Открыть (демо)'}
           </Button>
         )}
-        <span className="font-mono text-caps text-text-dim">
-          {canOpenReal
-            ? `баланс ${balance ?? 0}`
-            : 'демо не списывает лудки и не даёт предмет'}
-        </span>
+        {!canOpenReal && (
+          <span className="font-mono text-caps text-text-dim">
+            демо не списывает лудки и не даёт предмет
+          </span>
+        )}
         {error && (
           <p role="alert" className="text-caps font-mono text-danger">
             {error}
