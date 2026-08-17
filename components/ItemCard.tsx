@@ -1,10 +1,13 @@
 import { getRarityTier, RARITY_INFO } from '@/lib/rarity';
+import { ItemThumb } from '@/components/ItemThumb';
 
-const SIZE_CLASSES = {
-  lg: { card: 'w-44', art: 'h-30', imgPad: 'p-3' }, // 176px / 120px
-  md: { card: 'w-37', art: 'h-26', imgPad: 'p-2' }, // 148px / 106px
-  sm: { card: 'w-30', art: 'h-22', imgPad: 'p-1.5' }, // 120px / 90px
+const CARD_WIDTH = {
+  lg: 'w-44', // 176px
+  md: 'w-37', // 148px
+  sm: 'w-30', // 120px
 } as const;
+
+const SIZE_CLASSES_PX = { lg: 'w-44 h-44', md: 'w-37 h-37', sm: 'w-30 h-30' } as const;
 
 export function ItemCard({
   name,
@@ -21,12 +24,11 @@ export function ItemCard({
 }) {
   const tier = probability !== undefined ? getRarityTier(probability) : 'common';
   const info = RARITY_INFO[tier];
-  const { card, art, imgPad } = SIZE_CLASSES[size];
 
   if (state === 'loading') {
     return (
-      <div className={`${card} overflow-hidden rounded-md border border-line bg-surface-card`}>
-        <div className={`${art} relative overflow-hidden bg-surface-raised`}>
+      <div className={`${CARD_WIDTH[size]} overflow-hidden rounded-md border border-line bg-surface-card`}>
+        <div className={`${SIZE_CLASSES_PX[size]} relative overflow-hidden bg-surface-raised`}>
           <div className="absolute inset-0 w-3/5 animate-[lk-sheen_1.4s_linear_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
         </div>
         <div className="flex flex-col gap-2 p-3">
@@ -39,19 +41,12 @@ export function ItemCard({
 
   return (
     <div
-      className={`${card} overflow-hidden rounded-md border bg-surface-card transition-transform hover:-translate-y-0.5 ${
+      className={`${CARD_WIDTH[size]} overflow-hidden rounded-md border bg-surface-card transition-transform hover:-translate-y-0.5 ${
         state === 'disabled' ? 'opacity-40 saturate-[0.2]' : ''
       }`}
       style={{ borderColor: info.colorVar }}
     >
-      <div
-        className={`${art} flex items-center justify-center bg-surface-raised bg-[repeating-linear-gradient(135deg,var(--color-surface-raised)_0_8px,var(--color-line)_8px_16px)]`}
-      >
-        {imageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt={name} className={`h-full w-full object-cover ${imgPad}`} />
-        )}
-      </div>
+      <ItemThumb imageUrl={imageUrl} size={size} rarityColor={info.colorVar} />
       <div className="flex flex-col gap-1.5 p-3">
         <div className="truncate text-label font-semibold">{name}</div>
         {probability !== undefined && (
