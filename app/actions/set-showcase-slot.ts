@@ -2,7 +2,9 @@
 
 import { createClient } from '@/lib/supabase/server';
 
-export async function setShowcaseSlot(inventoryId: string, slotIndex: number | null) {
+type Selection = { type: 'item'; inventoryId: string } | { type: 'case'; caseId: string } | null;
+
+export async function setShowcaseSlot(slotIndex: number, selection: Selection) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -10,33 +12,47 @@ export async function setShowcaseSlot(inventoryId: string, slotIndex: number | n
 
   if (!user) return { error: 'Нужно войти через Google.' };
 
-  const { data: invRow } = await supabase
-    .from('inventory')
-    .select('user_id')
-    .eq('id', inventoryId)
-    .maybeSingle();
-
-  if (!invRow || invRow.user_id !== user.id) {
-    return { error: 'Это не твой предмет.' };
-  }
-
-  // Clear whatever slot this item currently occupies (if any) before
-  // placing it elsewhere — showcase_slots.inventory_id is unique, so an
-  // item can only ever be in one slot at a time.
-  const { error: clearError } = await supabase
-    .from('showcase_slots')
-    .delete()
-    .eq('inventory_id', inventoryId);
-
-  if (clearError) return { error: clearError.message };
-
-  if (slotIndex !== null) {
-    const { error: insertError } = await supabase
+  if (selection === null) {
+    const { error } = await supabase
       .from('showcase_slots')
-      .upsert({ user_id: user.id, slot_index: slotIndex, inventory_id: inventoryId });
-
-    if (insertError) return { error: insertError.message };
+      .delete()
+      .eq('user_id', user.id)
+      .eq('slot_index', slotIndex);
+    if (error) return { error: error.message };
+    return { ok: true as const };
   }
 
-  return { ok: true };
+  if (selection.type === 'item') {
+    const { data: invRow } = await supabase
+      .from('inventory')
+      .select('user_id')
+      .eq('id', selection.inventoryId)
+      .maybeSingle();
+    if (!invRow || invRow.user_id !== user.id) return { error: 'Это не твой предмет.' };
+
+    // showcase_slots.inventory_id is unique — clear whatever slot this
+    // item currently occupies before placing it elsewhere.
+    await supabase.from('showcase_slots').delete().eq('inventory_id', selection.inventoryId);
+
+    const { error } = await supabase
+      .from('showcase_slots')
+      .upsert({ user_id: user.id, slot_index: slotIndex, inventory_id: selection.inventoryId, case_id: null });
+    if (error) return { error: error.message };
+    return { ok: true as const };
+  }
+
+  const { data: caseRow } = await supabase
+    .from('cases')
+    .select('user_id, deleted_at')
+    .eq('id', selection.caseId)
+    .maybeSingle();
+  if (!caseRow || caseRow.user_id !== user.id || caseRow.deleted_at) {
+    return { error: 'Это не твой кейс.' };
+  }
+
+  const { error } = await supabase
+    .from('showcase_slots')
+    .upsert({ user_id: user.id, slot_index: slotIndex, inventory_id: null, case_id: selection.caseId });
+  if (error) return { error: error.message };
+  return { ok: true as const };
 }
