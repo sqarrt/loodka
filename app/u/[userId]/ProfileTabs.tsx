@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { ShowcasePicker } from './ShowcasePicker';
 import { CurrencyIcon } from '@/components/CurrencyIcon';
+import { ItemCard } from '@/components/ItemCard';
+import { ItemThumb } from '@/components/ItemThumb';
 
 type DisplayItem = {
   inventoryId: string;
@@ -66,16 +68,7 @@ export function ProfileTabs({
               >
                 {item ? (
                   <>
-                    <div className="flex aspect-square w-full items-center justify-center bg-surface-raised">
-                      {item.imageUrl && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={item.imageUrl}
-                          alt={item.name}
-                          className="h-full w-full object-contain p-2"
-                        />
-                      )}
-                    </div>
+                    <ItemThumb imageUrl={item.imageUrl} size="fill" />
                     <div className="px-2.5 py-2">
                       <span className="truncate text-caps font-semibold">{item.name}</span>
                     </div>
@@ -95,18 +88,9 @@ export function ProfileTabs({
       )}
 
       {tab === 'inventory' && (
-        <div className="flex flex-col gap-2.5">
+        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-6">
           {allItems.map((item) => (
-            <div
-              key={item.inventoryId}
-              className="flex items-center gap-4 rounded-lg border border-line bg-surface-card p-3"
-            >
-              {item.imageUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={item.imageUrl} alt={item.name} className="h-16 w-22 rounded-md object-cover" />
-              )}
-              <span className="text-label font-semibold">{item.name}</span>
-            </div>
+            <ItemCard key={item.inventoryId} name={item.name} imageUrl={item.imageUrl} size="md" />
           ))}
         </div>
       )}
