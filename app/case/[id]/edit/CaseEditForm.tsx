@@ -12,6 +12,7 @@ type InitialItem = {
   name: string;
   weight: number;
   removed: boolean;
+  description: string | null;
   imageUrl: string;
 };
 
@@ -21,6 +22,7 @@ type EditableItem = {
   name: string;
   weight: number;
   removed: boolean;
+  description: string | null;
   imageUrl: string;
   file: File | null;
 };
@@ -90,7 +92,16 @@ export function CaseEditForm({
   const addItem = () => {
     setItems((prev) => [
       ...prev,
-      { key: crypto.randomUUID(), id: null, name: '', weight: 1, removed: false, imageUrl: '', file: null },
+      {
+        key: crypto.randomUUID(),
+        id: null,
+        name: '',
+        weight: 1,
+        removed: false,
+        description: null,
+        imageUrl: '',
+        file: null,
+      },
     ]);
   };
 
@@ -115,10 +126,24 @@ export function CaseEditForm({
     const newFiles: File[] = [];
     const payload = items.map((item) => {
       if (item.id) {
-        return { id: item.id, name: item.name, weight: item.weight, removed: item.removed, imageIndex: null };
+        return {
+          id: item.id,
+          name: item.name,
+          weight: item.weight,
+          removed: item.removed,
+          description: item.description,
+          imageIndex: null,
+        };
       }
       const imageIndex = item.file ? newFiles.push(item.file) - 1 : null;
-      return { id: null, name: item.name, weight: item.weight, removed: false, imageIndex };
+      return {
+        id: null,
+        name: item.name,
+        weight: item.weight,
+        removed: false,
+        description: item.description,
+        imageIndex,
+      };
     });
     fd.set('items', JSON.stringify(payload));
     newFiles.forEach((file) => fd.append('newItemImage', file));
@@ -236,6 +261,16 @@ export function CaseEditForm({
                       placeholder="Название предмета"
                       required
                       className={inputClass}
+                    />
+                  )}
+
+                  {!item.removed && (
+                    <textarea
+                      value={item.description ?? ''}
+                      onChange={(e) => updateItem(item.key, { description: e.target.value || null })}
+                      placeholder="Описание (необязательно)"
+                      rows={1}
+                      className={`${inputClass} h-auto resize-none py-2.5 sm:col-span-full`}
                     />
                   )}
 

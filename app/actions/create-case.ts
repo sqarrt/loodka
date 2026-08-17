@@ -21,6 +21,7 @@ export async function createCase(
   const price = Number(formData.get('price'));
   const names = formData.getAll('itemName').map(String);
   const weights = formData.getAll('itemWeight').map(Number);
+  const descriptions = formData.getAll('itemDescription').map(String);
   const files = formData.getAll('itemImage').filter((f): f is File => f instanceof File && f.size > 0);
 
   if (!title) return { error: 'Укажи название кейса.' };
@@ -32,7 +33,12 @@ export async function createCase(
   const items = [];
   for (let i = 0; i < names.length; i++) {
     const imagePath = await uploadItemImage(supabase, user.id, files[i]);
-    items.push({ name: names[i], image_path: imagePath, weight: weights[i] });
+    items.push({
+      name: names[i],
+      image_path: imagePath,
+      weight: weights[i],
+      description: descriptions[i]?.trim() || null,
+    });
   }
 
   const { data: caseId, error } = await supabase.rpc('create_case_with_items', {

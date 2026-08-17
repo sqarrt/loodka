@@ -16,6 +16,7 @@ type EditItemInput = {
   weight: number;
   removed: boolean;
   imageIndex: number | null;
+  description: string | null;
 };
 
 export async function updateCase(
@@ -57,7 +58,13 @@ export async function updateCase(
   const itemsWithImages = [];
   for (const item of items) {
     if (item.id) {
-      itemsWithImages.push({ id: item.id, name: item.name, weight: item.weight, removed: item.removed });
+      itemsWithImages.push({
+        id: item.id,
+        name: item.name,
+        weight: item.weight,
+        removed: item.removed,
+        description: item.description,
+      });
     } else {
       if (item.imageIndex === null || !newImages[item.imageIndex]) {
         return { error: 'Для каждого нового предмета нужна картинка.' };
@@ -68,6 +75,7 @@ export async function updateCase(
         name: item.name,
         weight: item.weight,
         image_path: imagePath,
+        description: item.description,
       });
     }
   }

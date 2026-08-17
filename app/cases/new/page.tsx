@@ -96,6 +96,12 @@ export default function NewCasePage() {
                 required
                 className={`${inputClass} font-mono`}
               />
+              <textarea
+                name="itemDescription"
+                placeholder="Описание (необязательно)"
+                rows={1}
+                className={`${inputClass} h-auto resize-none py-2.5 sm:col-span-3`}
+              />
             </div>
           ))}
         </div>
