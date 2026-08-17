@@ -5,9 +5,17 @@ import { computeOdds, type CaseItem } from '@/lib/cases';
 import { ItemCard } from '@/components/ItemCard';
 import { CurrencyIcon } from '@/components/CurrencyIcon';
 import { CaseOpener } from './CaseOpener';
+import { CasePrankButton } from './CasePrankButton';
 
-export default async function CasePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CasePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ prank?: string; by?: string }>;
+}) {
   const { id } = await params;
+  const { prank, by } = await searchParams;
   const supabase = await createClient();
 
   const { data: caseRow } = await supabase
@@ -32,14 +40,18 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
     balance = profile?.balance ?? 0;
   }
 
-  const isAuthor = user?.id === caseRow.user_id;
-  const canOpenReal = !!user && !isAuthor;
+  // Self-opens are allowed too — author_share + cashback_share <= 1 makes
+  // this a zero-expected-value loop, not a farming exploit.
+  const canOpenReal = !!user;
+  const displayName = user?.email?.split('@')[0] ?? 'Игрок';
 
   const items = caseRow.items as CaseItem[];
   const itemsWithOdds = computeOdds(items).map((item) => ({
     ...item,
     imageUrl: resolveImageUrl(supabase, item.image_path),
   }));
+
+  const prankItemId = prank && items.some((item) => item.id === prank) ? prank : null;
 
   return (
     <main className="mx-auto flex w-full max-w-[1140px] flex-1 flex-col gap-7 px-10 py-10">
@@ -68,10 +80,15 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
         price={caseRow.price}
         canOpenReal={canOpenReal}
         initialBalance={balance}
+        prankItemId={prankItemId}
+        prankBy={by ?? null}
       />
 
       <div className="mt-auto flex flex-col gap-4">
-        <h2 className="font-display text-heading uppercase">Что может выпасть</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-heading uppercase">Что может выпасть</h2>
+          <CasePrankButton caseId={caseRow.id} items={itemsWithOdds} displayName={displayName} />
+        </div>
         <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-6">
           {itemsWithOdds.map((item) => (
             <ItemCard

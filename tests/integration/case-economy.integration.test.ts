@@ -86,7 +86,7 @@ describe('open_case_for_real', () => {
     expect(result.cashback_value).toBe(expectedCashback);
   });
 
-  it('rejects the author opening their own case for real', async () => {
+  it('allows the author to open their own case for real, netting only the non-author share', async () => {
     const author = await createSignedInUser(`author3-${Date.now()}@example.com`, 100);
     const items = [
       { id: crypto.randomUUID(), name: 'A', image_path: 'a.png', weight: 1 },
@@ -98,8 +98,23 @@ describe('open_case_for_real', () => {
       .select('id')
       .single();
 
-    const { error } = await author.client.rpc('open_case_for_real', { p_case_id: caseRow!.id });
-    expect(error).not.toBeNull();
+    const { data, error } = await author.client.rpc('open_case_for_real', {
+      p_case_id: caseRow!.id,
+    });
+
+    expect(error).toBeNull();
+    const result = data![0];
+    // -price (10) +author_payout (floor(0.5*10)=5): the price deduction and
+    // the author payout land on the same account, netting -5, not -10.
+    expect(result.new_balance).toBe(95);
+
+    const { data: inventoryRows } = await admin
+      .from('inventory')
+      .select('item_id')
+      .eq('user_id', author.userId)
+      .eq('case_id', caseRow!.id);
+    expect(inventoryRows).toHaveLength(1);
+    expect(inventoryRows![0].item_id).toBe(result.item_id);
   });
 
   it('rejects an opener with insufficient balance', async () => {

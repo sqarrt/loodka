@@ -35,12 +35,16 @@ export function CaseOpener({
   price,
   canOpenReal,
   initialBalance,
+  prankItemId,
+  prankBy,
 }: {
   caseId: string;
   items: ItemWithImage[];
   price: number;
   canOpenReal: boolean;
   initialBalance: number | null;
+  prankItemId?: string | null;
+  prankBy?: string | null;
 }) {
   const [strip, setStrip] = useState<ItemWithImage[]>(() =>
     buildReelStrip(items, items[0])
@@ -51,6 +55,8 @@ export function CaseOpener({
   const [result, setResult] = useState<ItemWithImage | null>(null);
   const [balance, setBalance] = useState(initialBalance);
   const [error, setError] = useState<string | null>(null);
+  const [pranked, setPranked] = useState(!!prankItemId);
+  const [resultIsPranked, setResultIsPranked] = useState(false);
   const router = useRouter();
 
   const animateTo = (winner: ItemWithImage) => {
@@ -81,8 +87,27 @@ export function CaseOpener({
     }, SPIN_DURATION_MS + 50);
   };
 
+  // A pending prank overrides either button: no balance touched, no server
+  // call, always lands on the pranked item. Consumed after one open — the
+  // query param is scrubbed from the URL too, so a refresh can't re-arm it.
+  const consumePrank = (): ItemWithImage | undefined => {
+    if (!pranked || !prankItemId) return undefined;
+    const forced = items.find((item) => item.id === prankItemId);
+    if (!forced) return undefined;
+    setPranked(false);
+    setResultIsPranked(true);
+    router.replace(`/case/${caseId}`, { scroll: false });
+    return forced;
+  };
+
   const handleDemoOpen = () => {
     if (phase === 'spinning') return;
+    const forced = consumePrank();
+    if (forced) {
+      animateTo(forced);
+      return;
+    }
+    setResultIsPranked(false);
     animateTo(pickWeightedRandom(items));
   };
 
@@ -90,6 +115,14 @@ export function CaseOpener({
     if (phase === 'spinning') return;
     setError(null);
     setPhase('spinning');
+
+    const forced = consumePrank();
+    if (forced) {
+      animateTo(forced);
+      return;
+    }
+
+    setResultIsPranked(false);
     const response = await openCaseForReal(caseId);
 
     if (response.error) {
@@ -191,9 +224,11 @@ export function CaseOpener({
               {result.name}
             </span>
             <span className="text-body text-text-secondary">
-              {canOpenReal
-                ? 'Предмет уже в инвентаре. Можно поставить на витрину или обменять на лудки.'
-                : 'Демо-открытие — лудки не списаны, предмет не добавлен в инвентарь.'}
+              {resultIsPranked
+                ? `Тебя разыграл ${prankBy || 'друг'}! Предмет не сохранится в инвентаре. Можешь открыть ещё раз — уже по-настоящему.`
+                : canOpenReal
+                  ? 'Предмет уже в инвентаре. Можно поставить на витрину или обменять на лудки.'
+                  : 'Демо-открытие — лудки не списаны, предмет не добавлен в инвентарь.'}
             </span>
           </div>
         </div>
