@@ -31,9 +31,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="ru"
       className={`${unbounded.variable} ${manrope.variable} ${jetbrainsMono.variable}`}
     >
-      <body className="font-sans">
+      <body className="flex min-h-screen flex-col font-sans">
         <Header />
-        {children}
+        <div className="flex flex-1 flex-col">{children}</div>
       </body>
     </html>
   );
