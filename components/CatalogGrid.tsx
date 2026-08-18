@@ -24,14 +24,14 @@ function CaseCard({ c }: { c: CatalogCase }) {
             <img src={c.coverImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
           )}
           {c.coverImageUrl && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/70 to-transparent" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
           )}
           <div
             className="pointer-events-none absolute inset-x-0 bottom-0 h-14 opacity-20"
             style={{ background: `linear-gradient(to top, ${accent}, transparent)` }}
           />
           <span
-            className="relative rounded-full border px-2 py-1 font-mono text-[9px] uppercase tracking-[0.1em]"
+            className="relative rounded-full border bg-bg/70 px-2 py-1 font-mono text-[9px] uppercase tracking-[0.1em]"
             style={{ borderColor: accent, color: accent }}
           >
             топ: {RARITY_INFO[c.topRarity].name.toLowerCase()}
