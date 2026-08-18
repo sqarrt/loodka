@@ -6,12 +6,19 @@ import { ShowcasePicker } from './ShowcasePicker';
 import { CurrencyIcon } from '@/components/CurrencyIcon';
 import { ItemCard } from '@/components/ItemCard';
 import { ItemThumb } from '@/components/ItemThumb';
+import { CaseThumb } from '@/components/CaseThumb';
+import { getRarityTier, RARITY_INFO } from '@/lib/rarity';
 
 type DisplayItem = {
   inventoryId: string;
   name: string;
   imageUrl: string;
   description: string | null;
+  probability?: number;
+  caseId: string | null;
+  caseTitle: string | null;
+  authorId: string | null;
+  authorName: string | null;
 };
 
 type CaseSummary = {
@@ -19,6 +26,7 @@ type CaseSummary = {
   title: string;
   price: number;
   itemCount: number;
+  coverImageUrl: string | null;
 };
 
 type ShowcaseSlot = { inventoryId: string | null; caseId: string | null };
@@ -69,6 +77,8 @@ export function ProfileTabs({
             const item = slot.inventoryId ? itemsById.get(slot.inventoryId) : null;
             const caseDisplay = slot.caseId ? caseDisplayById[slot.caseId] : null;
             const filled = Boolean(item || caseDisplay);
+            const itemRarityColor =
+              item?.probability !== undefined ? RARITY_INFO[getRarityTier(item.probability)].colorVar : undefined;
 
             const onClick = viewerIsOwner
               ? () => setPickerSlot(i)
@@ -83,17 +93,18 @@ export function ProfileTabs({
                 className={`flex flex-col overflow-hidden rounded-md border ${
                   filled ? 'border-line bg-surface-card' : 'border-dashed border-line-strong bg-inset'
                 } ${onClick ? 'cursor-pointer hover:border-gold' : ''}`}
+                style={itemRarityColor ? { borderColor: itemRarityColor } : undefined}
               >
                 {item ? (
                   <>
-                    <ItemThumb imageUrl={item.imageUrl} size="fill" />
+                    <ItemThumb imageUrl={item.imageUrl} size="fill" rarityColor={itemRarityColor} />
                     <div className="px-2.5 py-2">
                       <span className="truncate text-caps font-semibold">{item.name}</span>
                     </div>
                   </>
                 ) : caseDisplay ? (
                   <>
-                    <ItemThumb imageUrl={caseDisplay.coverImageUrl} size="fill" />
+                    <CaseThumb imageUrl={caseDisplay.coverImageUrl} size="fill" />
                     <div className="px-2.5 py-2">
                       <span className="truncate text-caps font-semibold">{caseDisplay.title}</span>
                     </div>
@@ -120,6 +131,11 @@ export function ProfileTabs({
               name={item.name}
               imageUrl={item.imageUrl}
               description={item.description}
+              probability={item.probability}
+              caseId={item.caseId}
+              caseTitle={item.caseTitle}
+              authorId={item.authorId}
+              authorName={item.authorName}
               size="md"
             />
           ))}
@@ -131,8 +147,9 @@ export function ProfileTabs({
           {cases.map((c) => (
             <div
               key={c.id}
-              className="flex flex-col gap-3 rounded-lg border border-line bg-surface-card p-4 sm:grid sm:grid-cols-[1fr_110px_90px_auto] sm:items-center"
+              className="flex flex-col gap-3 rounded-lg border border-line bg-surface-card p-4 sm:grid sm:grid-cols-[64px_1fr_110px_90px_auto] sm:items-center"
             >
+              <CaseThumb imageUrl={c.coverImageUrl} size="xs" badge={false} />
               <span className="font-display text-label uppercase">{c.title}</span>
               <span className="font-mono text-mono-num text-text-secondary">
                 {c.itemCount} предметов

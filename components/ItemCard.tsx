@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { getRarityTier, RARITY_INFO } from '@/lib/rarity';
 import { ItemThumb } from '@/components/ItemThumb';
 
@@ -17,6 +18,10 @@ export function ItemCard({
   imageUrl,
   probability,
   description,
+  caseId,
+  caseTitle,
+  authorId,
+  authorName,
   size = 'md',
   state = 'default',
 }: {
@@ -24,6 +29,10 @@ export function ItemCard({
   imageUrl?: string;
   probability?: number;
   description?: string | null;
+  caseId?: string | null;
+  caseTitle?: string | null;
+  authorId?: string | null;
+  authorName?: string | null;
   size?: 'lg' | 'md' | 'sm';
   state?: 'default' | 'loading' | 'disabled';
 }) {
@@ -69,6 +78,20 @@ export function ItemCard({
         </div>
         <div className="h-[3px]" style={{ background: info.colorVar }} />
       </div>
+      {caseId && authorId && (
+        <div className="mt-1 flex flex-col gap-0.5 truncate font-mono text-[10px] text-text-dim">
+          {caseTitle && (
+            <Link href={`/case/${caseId}`} className="truncate hover:text-text-secondary hover:underline">
+              {caseTitle}
+            </Link>
+          )}
+          {authorName && (
+            <Link href={`/u/${authorId}`} className="truncate hover:text-text-secondary hover:underline">
+              @{authorName}
+            </Link>
+          )}
+        </div>
+      )}
       {hovered && description && (
         <div className="absolute bottom-[calc(100%+8px)] left-1/2 z-10 w-48 -translate-x-1/2 rounded-md border border-gold/40 bg-surface-card p-2.5 text-center text-mono-num text-text-secondary shadow-2xl">
           {description}
