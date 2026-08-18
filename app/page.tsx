@@ -57,7 +57,12 @@ export default async function HomePage({
           sort={sort}
           dir={dir}
         />
-        <CatalogGrid initialCases={cases} initialCursor={nextCursor} filters={filters} />
+        <CatalogGrid
+          key={JSON.stringify(filters)}
+          initialCases={cases}
+          initialCursor={nextCursor}
+          filters={filters}
+        />
       </div>
     </main>
   );
