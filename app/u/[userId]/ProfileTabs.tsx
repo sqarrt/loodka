@@ -62,10 +62,14 @@ export function ProfileTabs({
   const TAB_LABELS = { showcase: 'Витрина', inventory: 'Инвентарь', cases: 'Кейсы' } as const;
 
   return (
-    <div className="flex w-full items-start">
+    <>
       <div
-        className={`flex min-w-0 max-w-[1140px] flex-1 flex-col gap-6 py-10 transition-[padding] duration-200 ${
-          pickerOpen ? 'pl-10 pr-6' : 'mx-auto px-10'
+        className={`mx-auto flex w-full flex-col gap-6 px-10 py-10 transition-[max-width] duration-200 ${
+          // Content is centered against the real viewport, same as when the
+          // picker is closed — it only gives up width once the picker would
+          // actually reach it (100vw - picker - gap), not on every open.
+          // That's what keeps it in place on screens with room to spare.
+          pickerOpen ? 'max-w-[min(1140px,calc(100vw_-_440px))]' : 'max-w-[1140px]'
         }`}
       >
         <div className="flex flex-col gap-1">
@@ -210,7 +214,7 @@ export function ProfileTabs({
       </div>
 
       {pickerOpen && pickerSlot !== null && (
-        <div className="sticky top-0 h-screen w-full max-w-[400px] shrink-0 py-10 pr-6">
+        <div className="fixed right-4 top-[70px] z-10 h-[calc(100vh-86px)] w-full max-w-[400px]">
           <ShowcasePicker
             slotIndex={pickerSlot}
             currentInventoryId={slots[pickerSlot].inventoryId}
@@ -219,6 +223,6 @@ export function ProfileTabs({
           />
         </div>
       )}
-    </div>
+    </>
   );
 }

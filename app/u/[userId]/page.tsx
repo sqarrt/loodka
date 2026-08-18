@@ -107,7 +107,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
   );
 
   return (
-    <main className="flex w-full flex-1">
+    <main className="w-full flex-1">
       <ProfileTabs
         displayName={displayName}
         level={level}
