@@ -59,6 +59,13 @@
   --text-caps--line-height: 14px;
 }
 
+html {
+  /* Reserve the scrollbar's width always, so content whose height varies
+     (e.g. switching tabs) doesn't jump horizontally when the scrollbar
+     appears or disappears. */
+  scrollbar-gutter: stable;
+}
+
 html,
 body {
   background: var(--color-bg);
