@@ -27,6 +27,7 @@ export function ShowcasePicker({
   onClose: () => void;
 }) {
   const router = useRouter();
+  const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<'items' | 'cases'>('items');
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -41,6 +42,20 @@ export function ShowcasePicker({
   // screen while it's in flight.
   const itemsCache = useRef(new Map<string, ItemsResult>());
   const casesCache = useRef(new Map<string, CasesResult>());
+
+  // Mount already off-screen (translate-x-full), then flip to open on the
+  // next frame so the transition actually plays instead of the drawer just
+  // appearing already-open. Closing reverses the same way: slide out first,
+  // then unmount via onClose once the transition has had time to finish.
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setOpen(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  const close = () => {
+    setOpen(false);
+    setTimeout(onClose, 200);
+  };
 
   const switchTab = (t: 'items' | 'cases') => {
     setTab(t);
@@ -88,7 +103,7 @@ export function ShowcasePicker({
   const pick = async (selection: { type: 'item'; inventoryId: string } | { type: 'case'; caseId: string } | null) => {
     await setShowcaseSlot(slotIndex, selection);
     router.refresh();
-    onClose();
+    close();
   };
 
   const items = tab === 'items' ? itemsResult?.items : undefined;
@@ -99,9 +114,14 @@ export function ShowcasePicker({
   const showSkeleton = isPending && (tab === 'items' ? items === undefined : cases === undefined);
 
   return (
-    <div className="fixed inset-0 z-10 flex items-center justify-center bg-bg/80 p-7" onClick={onClose}>
+    <div
+      className={`fixed inset-0 z-10 bg-bg/80 transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'}`}
+      onClick={close}
+    >
       <div
-        className="flex max-h-[70vh] w-full max-w-[560px] flex-col overflow-hidden rounded-lg border border-line-strong bg-surface-card shadow-2xl"
+        className={`fixed inset-y-0 right-0 flex h-full w-full max-w-[420px] flex-col border-l border-line-strong bg-surface-card shadow-2xl transition-transform duration-200 ease-out ${
+          open ? 'translate-x-0' : 'translate-x-full'
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-line p-4">
@@ -109,7 +129,7 @@ export function ShowcasePicker({
             Что поставить в слот {String(slotIndex + 1).padStart(2, '0')}
           </span>
           <button
-            onClick={onClose}
+            onClick={close}
             className="flex h-8 w-8 items-center justify-center rounded-md border border-line text-text-secondary hover:border-line-strong hover:text-text-primary"
           >
             ×
