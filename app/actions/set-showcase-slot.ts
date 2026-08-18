@@ -50,6 +50,10 @@ export async function setShowcaseSlot(slotIndex: number, selection: Selection) {
     return { error: 'Это не твой кейс.' };
   }
 
+  // showcase_slots.case_id is unique — clear whatever slot this case
+  // currently occupies before placing it elsewhere.
+  await supabase.from('showcase_slots').delete().eq('case_id', selection.caseId);
+
   const { error } = await supabase
     .from('showcase_slots')
     .upsert({ user_id: user.id, slot_index: slotIndex, inventory_id: null, case_id: selection.caseId });
