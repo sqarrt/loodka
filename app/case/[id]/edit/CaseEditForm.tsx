@@ -68,16 +68,6 @@ export function CaseEditForm({
   const odds = useMemo(() => probabilities(items), [items]);
   const created = new Date(createdAt).toLocaleDateString('ru-RU');
 
-  const changedCount =
-    (title !== initialTitle ? 1 : 0) +
-    (price !== initialPrice ? 1 : 0) +
-    items.filter((item) => {
-      const original = initialItems.find((o) => o.id === item.id);
-      if (item.id === null) return true;
-      if (!original) return true;
-      return original.name !== item.name || original.weight !== item.weight || original.removed !== item.removed;
-    }).length;
-
   const updateItem = (key: string, patch: Partial<EditableItem>) => {
     setItems((prev) => prev.map((item) => (item.key === key ? { ...item, ...patch } : item)));
   };
@@ -119,14 +109,6 @@ export function CaseEditForm({
     if (!file) return;
     setCoverFile(file);
     setCoverPreview(URL.createObjectURL(file));
-  };
-
-  const handleReset = () => {
-    setTitle(initialTitle);
-    setPrice(initialPrice);
-    setItems(initialItems.map((item) => ({ ...item, key: item.id, file: null })));
-    setCoverFile(null);
-    setCoverPreview(coverImageUrl);
   };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -385,35 +367,17 @@ export function CaseEditForm({
           </p>
         )}
 
-        <div
-          className={`sticky bottom-4 flex flex-col items-center justify-between gap-3 rounded-lg border p-4 sm:flex-row ${
-            changedCount > 0 ? 'border-gold bg-surface-raised shadow-2xl' : 'border-line bg-surface-card'
-          }`}
-        >
-          <span
-            className={`font-mono text-caps ${changedCount > 0 ? 'text-gold' : 'text-text-muted'}`}
+        <div className="flex justify-end border-t border-line-soft pt-5">
+          <button
+            type="submit"
+            disabled={isPending}
+            className="relative flex h-12 items-center overflow-hidden rounded-md bg-gold px-8 font-display text-label uppercase text-bg hover:bg-gold-hover disabled:cursor-wait"
           >
-            {changedCount > 0 ? `${changedCount} несохранённых изменения` : 'изменений нет'}
-          </span>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={handleReset}
-              className="flex h-11 items-center rounded-md border border-line-strong px-5 font-mono text-caps uppercase text-text-secondary hover:text-text-primary"
-            >
-              Отменить
-            </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="relative flex h-11 items-center overflow-hidden rounded-md bg-gold px-5 font-mono text-caps uppercase text-bg hover:bg-gold-hover disabled:cursor-wait"
-            >
-              {isPending && (
-                <span className="absolute inset-0 w-[45%] animate-[lk-sheen_1.1s_linear_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-              )}
-              <span className="relative">{isPending ? 'Сохраняем…' : 'Сохранить'}</span>
-            </button>
-          </div>
+            {isPending && (
+              <span className="absolute inset-0 w-[45%] animate-[lk-sheen_1.1s_linear_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+            )}
+            <span className="relative">{isPending ? 'Сохраняем…' : 'Сохранить'}</span>
+          </button>
         </div>
       </form>
 
