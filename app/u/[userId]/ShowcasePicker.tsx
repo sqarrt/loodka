@@ -105,8 +105,10 @@ export function ShowcasePicker({
 
   const pick = async (selection: { type: 'item'; inventoryId: string } | { type: 'case'; caseId: string } | null) => {
     await setShowcaseSlot(slotIndex, selection);
+    // Deliberately doesn't close — only the × button does. Refreshing
+    // updates currentInventoryId/currentCaseId via props, so the "тут"
+    // badge moves to the newly picked item without the panel going away.
     router.refresh();
-    close();
   };
 
   const items = tab === 'items' ? itemsResult?.items : undefined;
@@ -124,7 +126,7 @@ export function ShowcasePicker({
     >
       <button
         onClick={close}
-        className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-md border border-line bg-surface-card text-text-secondary hover:border-line-strong hover:text-text-primary"
+        className="absolute right-3 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-md border border-line bg-surface-card text-text-secondary hover:border-line-strong hover:text-text-primary"
       >
         ×
       </button>
