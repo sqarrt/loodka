@@ -31,7 +31,9 @@ export function ShowcasePicker({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [tab, setTab] = useState<'items' | 'cases'>('items');
+  // Opens on whichever tab matches what's already in the slot (a case ->
+  // "Мои кейсы", an item or an empty slot -> "Предметы").
+  const [tab, setTab] = useState<'items' | 'cases'>(currentCaseId ? 'cases' : 'items');
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [page, setPage] = useState(0);
