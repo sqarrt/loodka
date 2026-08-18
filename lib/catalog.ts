@@ -173,9 +173,8 @@ export async function fetchCatalogPage(
 export function resolveSort(
   sortParam: string | undefined,
   dirParam: string | undefined
-): { sort: CatalogSort; dir: SortDirection; explicit: boolean } {
+): { sort: CatalogSort; dir: SortDirection } {
   const sort = CATALOG_SORTS.some((s) => s.value === sortParam) ? (sortParam as CatalogSort) : DEFAULT_SORT;
-  const explicit = sort === sortParam;
   const dir = dirParam === 'asc' || dirParam === 'desc' ? dirParam : defaultDirFor(sort);
-  return { sort, dir, explicit };
+  return { sort, dir };
 }

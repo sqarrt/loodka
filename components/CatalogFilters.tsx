@@ -11,17 +11,17 @@ function buildHref(params: Record<string, string | undefined>) {
   return qs ? `/?${qs}` : '/';
 }
 
-// Three-click cycle per chip: click an inactive chip -> activate it at its
-// default direction; click the active chip -> flip direction; click again ->
-// clear back to the implicit default (popular, desc, nothing highlighted).
+// Three-click cycle per chip: click a different chip -> activate it at its
+// default direction; click the already-active chip -> flip direction; click
+// again -> clear back to the default sort (popular, desc — which then shows
+// as active again, since it genuinely is the sort in effect).
 function nextSortState(
   chipValue: CatalogSort,
   chipDefaultDir: SortDirection,
   currentSort: CatalogSort,
-  currentDir: SortDirection,
-  isExplicit: boolean
+  currentDir: SortDirection
 ): { sort?: CatalogSort; dir?: SortDirection } {
-  if (!isExplicit || currentSort !== chipValue) {
+  if (currentSort !== chipValue) {
     return { sort: chipValue, dir: chipDefaultDir };
   }
   if (currentDir === chipDefaultDir) {
@@ -40,7 +40,6 @@ export function CatalogFilters({
   priceMax,
   sort,
   dir,
-  sortExplicit,
 }: {
   title?: string;
   author?: string;
@@ -48,7 +47,6 @@ export function CatalogFilters({
   priceMax?: number;
   sort: CatalogSort;
   dir: SortDirection;
-  sortExplicit: boolean;
 }) {
   const baseParams = {
     title,
@@ -64,8 +62,8 @@ export function CatalogFilters({
           сортировка
         </span>
         {CATALOG_SORTS.map((s) => {
-          const isActive = sortExplicit && sort === s.value;
-          const next = nextSortState(s.value, s.defaultDir, sort, dir, sortExplicit);
+          const isActive = sort === s.value;
+          const next = nextSortState(s.value, s.defaultDir, sort, dir);
           return (
             <a
               key={s.value}
@@ -87,8 +85,8 @@ export function CatalogFilters({
         method="get"
         className="grid grid-cols-1 items-end gap-3 rounded-lg border border-line bg-inset p-4 sm:grid-cols-[2fr_1fr_100px_100px_auto]"
       >
-        {sortExplicit && <input type="hidden" name="sort" value={sort} />}
-        {sortExplicit && <input type="hidden" name="dir" value={dir} />}
+        <input type="hidden" name="sort" value={sort} />
+        <input type="hidden" name="dir" value={dir} />
         <label className="flex flex-col gap-1.5">
           <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">
             название
