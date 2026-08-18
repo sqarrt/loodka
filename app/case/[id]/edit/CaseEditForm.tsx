@@ -2,7 +2,6 @@
 
 import { useActionState, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { updateCase, deleteCase } from '@/app/actions/edit-case';
-import { Button } from '@/components/Button';
 import { CurrencyIcon } from '@/components/CurrencyIcon';
 import { ItemThumb } from '@/components/ItemThumb';
 import { getRarityTier, RARITY_INFO } from '@/lib/rarity';
@@ -404,9 +403,16 @@ export function CaseEditForm({
             >
               Отменить
             </button>
-            <Button type="submit" variant={isPending ? 'loading' : 'cta'} className="h-11 px-6 text-body">
-              {isPending ? 'Сохраняем…' : 'Сохранить'}
-            </Button>
+            <button
+              type="submit"
+              disabled={isPending}
+              className="relative flex h-11 items-center overflow-hidden rounded-md bg-gold px-5 font-mono text-caps uppercase text-bg hover:bg-gold-hover disabled:cursor-wait"
+            >
+              {isPending && (
+                <span className="absolute inset-0 w-[45%] animate-[lk-sheen_1.1s_linear_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+              )}
+              <span className="relative">{isPending ? 'Сохраняем…' : 'Сохранить'}</span>
+            </button>
           </div>
         </div>
       </form>
