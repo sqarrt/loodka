@@ -7,7 +7,7 @@ import { mapInventoryToDisplayItems, type InventoryRowWithItem } from '@/lib/inv
 const PAGE_SIZE = 20;
 
 export type PickerItem = { inventoryId: string; name: string; imageUrl: string };
-export type PickerCase = { id: string; title: string; itemCount: number };
+export type PickerCase = { id: string; title: string; itemCount: number; coverImageUrl: string | null };
 
 export async function getInventoryPage(
   query: string,
@@ -59,7 +59,7 @@ export async function getOwnCasesPage(
   const from = page * PAGE_SIZE;
   let q = supabase
     .from('cases')
-    .select('id, title, case_items(id)')
+    .select('id, title, cover_image_path, case_items(id)')
     .eq('user_id', user.id)
     .is('deleted_at', null)
     .eq('case_items.removed', false)
@@ -74,7 +74,12 @@ export async function getOwnCasesPage(
   const page_ = hasMore ? rows.slice(0, PAGE_SIZE) : rows;
 
   return {
-    cases: page_.map((c) => ({ id: c.id, title: c.title, itemCount: c.case_items.length })),
+    cases: page_.map((c) => ({
+      id: c.id,
+      title: c.title,
+      itemCount: c.case_items.length,
+      coverImageUrl: c.cover_image_path ? resolveImageUrl(supabase, c.cover_image_path) : null,
+    })),
     hasMore,
   };
 }

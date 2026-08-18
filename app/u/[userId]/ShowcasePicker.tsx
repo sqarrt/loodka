@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { setShowcaseSlot } from '@/app/actions/set-showcase-slot';
 import {
@@ -10,6 +10,10 @@ import {
   type PickerCase,
 } from '@/app/actions/showcase-picker-data';
 import { ItemThumb } from '@/components/ItemThumb';
+import { CaseThumb } from '@/components/CaseThumb';
+
+type ItemsResult = { items: PickerItem[]; hasMore: boolean };
+type CasesResult = { cases: PickerCase[]; hasMore: boolean };
 
 export function ShowcasePicker({
   slotIndex,
@@ -25,11 +29,18 @@ export function ShowcasePicker({
   const router = useRouter();
   const [tab, setTab] = useState<'items' | 'cases'>('items');
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [page, setPage] = useState(0);
-  const [items, setItems] = useState<PickerItem[]>([]);
-  const [cases, setCases] = useState<PickerCase[]>([]);
-  const [hasMore, setHasMore] = useState(false);
+  const [itemsResult, setItemsResult] = useState<ItemsResult | null>(null);
+  const [casesResult, setCasesResult] = useState<CasesResult | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  // Keyed by "tab:query:page" so switching back to an already-visited
+  // tab/page/search combo is instant and never re-requests the same page —
+  // and so a background refetch never has to clear what's already on
+  // screen while it's in flight.
+  const itemsCache = useRef(new Map<string, ItemsResult>());
+  const casesCache = useRef(new Map<string, CasesResult>());
 
   const switchTab = (t: 'items' | 'cases') => {
     setTab(t);
@@ -42,21 +53,37 @@ export function ShowcasePicker({
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      startTransition(async () => {
-        if (tab === 'items') {
-          const result = await getInventoryPage(query, page);
-          setItems(result.items);
-          setHasMore(result.hasMore);
-        } else {
-          const result = await getOwnCasesPage(query, page);
-          setCases(result.cases);
-          setHasMore(result.hasMore);
-        }
-      });
-    }, 200);
+    const timer = setTimeout(() => setDebouncedQuery(query), 250);
     return () => clearTimeout(timer);
-  }, [tab, query, page]);
+  }, [query]);
+
+  useEffect(() => {
+    const key = `${tab}:${debouncedQuery}:${page}`;
+
+    if (tab === 'items') {
+      const cached = itemsCache.current.get(key);
+      if (cached) {
+        startTransition(() => setItemsResult(cached));
+        return;
+      }
+      startTransition(async () => {
+        const result = await getInventoryPage(debouncedQuery, page);
+        itemsCache.current.set(key, result);
+        setItemsResult(result);
+      });
+    } else {
+      const cached = casesCache.current.get(key);
+      if (cached) {
+        startTransition(() => setCasesResult(cached));
+        return;
+      }
+      startTransition(async () => {
+        const result = await getOwnCasesPage(debouncedQuery, page);
+        casesCache.current.set(key, result);
+        setCasesResult(result);
+      });
+    }
+  }, [tab, debouncedQuery, page]);
 
   const pick = async (selection: { type: 'item'; inventoryId: string } | { type: 'case'; caseId: string } | null) => {
     await setShowcaseSlot(slotIndex, selection);
@@ -64,10 +91,17 @@ export function ShowcasePicker({
     onClose();
   };
 
+  const items = tab === 'items' ? itemsResult?.items : undefined;
+  const cases = tab === 'cases' ? casesResult?.cases : undefined;
+  const hasMore = (tab === 'items' ? itemsResult?.hasMore : casesResult?.hasMore) ?? false;
+  // Only the very first load of a combo has nothing cached to show yet —
+  // background refetches (e.g. after typing) keep the old grid visible.
+  const showSkeleton = isPending && (tab === 'items' ? items === undefined : cases === undefined);
+
   return (
     <div className="fixed inset-0 z-10 flex items-center justify-center bg-bg/80 p-7" onClick={onClose}>
       <div
-        className="flex max-h-[70vh] w-full max-w-[480px] flex-col overflow-hidden rounded-lg border border-line-strong bg-surface-card shadow-2xl"
+        className="flex max-h-[70vh] w-full max-w-[560px] flex-col overflow-hidden rounded-lg border border-line-strong bg-surface-card shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-line p-4">
@@ -105,45 +139,66 @@ export function ShowcasePicker({
           />
         </div>
 
-        <div className="flex flex-col gap-2 overflow-auto p-3.5">
-          {isPending && <p className="p-2 text-center text-body text-text-dim">Загружаем…</p>}
-          {!isPending &&
-            tab === 'items' &&
-            items.map((item) => (
-              <button
-                key={item.inventoryId}
-                onClick={() => pick({ type: 'item', inventoryId: item.inventoryId })}
-                className="flex items-center gap-3 rounded-md border border-line bg-inset p-2.5 text-left hover:border-line-strong hover:bg-surface-raised"
-              >
-                <ItemThumb imageUrl={item.imageUrl} size="xs" />
-                <span className="text-label font-semibold">{item.name}</span>
-                {item.inventoryId === currentInventoryId && (
-                  <span className="ml-auto rounded-full border border-line px-2 py-1 font-mono text-[9px] uppercase text-text-muted">
-                    уже в витрине
-                  </span>
-                )}
-              </button>
-            ))}
-          {!isPending &&
-            tab === 'cases' &&
-            cases.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => pick({ type: 'case', caseId: c.id })}
-                className="flex items-center gap-3 rounded-md border border-line bg-inset p-2.5 text-left hover:border-line-strong hover:bg-surface-raised"
-              >
-                <span className="text-label font-semibold">{c.title}</span>
-                <span className="font-mono text-caps text-text-dim">{c.itemCount} предметов</span>
-                {c.id === currentCaseId && (
-                  <span className="ml-auto rounded-full border border-line px-2 py-1 font-mono text-[9px] uppercase text-text-muted">
-                    уже в витрине
-                  </span>
-                )}
-              </button>
-            ))}
-          {!isPending && ((tab === 'items' && items.length === 0) || (tab === 'cases' && cases.length === 0)) && (
-            <p className="p-2 text-center text-body text-text-dim">Ничего не найдено</p>
+        <div className="min-h-[240px] overflow-auto p-3.5">
+          {showSkeleton && (
+            <div className="grid grid-cols-3 gap-2.5">
+              {Array.from({ length: 6 }, (_, i) => (
+                <div key={i} className="flex flex-col gap-1.5">
+                  <div className="aspect-square w-full animate-pulse rounded-md bg-surface-raised" />
+                  <div className="h-2.5 w-3/4 animate-pulse rounded bg-surface-raised" />
+                </div>
+              ))}
+            </div>
           )}
+
+          {!showSkeleton && tab === 'items' && (
+            <div className="grid grid-cols-3 gap-2.5">
+              {(items ?? []).map((item) => (
+                <button
+                  key={item.inventoryId}
+                  onClick={() => pick({ type: 'item', inventoryId: item.inventoryId })}
+                  className="group flex flex-col gap-1.5 text-left"
+                >
+                  <div className="relative">
+                    <ItemThumb imageUrl={item.imageUrl} size="fill" />
+                    {item.inventoryId === currentInventoryId && (
+                      <span className="absolute right-1 top-1 rounded-full border border-gold/60 bg-bg/80 px-1.5 py-0.5 font-mono text-[8px] uppercase text-gold">
+                        тут
+                      </span>
+                    )}
+                  </div>
+                  <span className="truncate text-caps font-semibold group-hover:text-gold">{item.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {!showSkeleton && tab === 'cases' && (
+            <div className="grid grid-cols-3 gap-2.5">
+              {(cases ?? []).map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => pick({ type: 'case', caseId: c.id })}
+                  className="group flex flex-col gap-1.5 text-left"
+                >
+                  <div className="relative">
+                    <CaseThumb imageUrl={c.coverImageUrl} size="fill" badge={false} />
+                    {c.id === currentCaseId && (
+                      <span className="absolute right-1 top-1 rounded-full border border-gold/60 bg-bg/80 px-1.5 py-0.5 font-mono text-[8px] uppercase text-gold">
+                        тут
+                      </span>
+                    )}
+                  </div>
+                  <span className="truncate text-caps font-semibold group-hover:text-gold">{c.title}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {!showSkeleton &&
+            ((tab === 'items' && items?.length === 0) || (tab === 'cases' && cases?.length === 0)) && (
+              <p className="p-2 text-center text-body text-text-dim">Ничего не найдено</p>
+            )}
         </div>
 
         {(page > 0 || hasMore) && (
