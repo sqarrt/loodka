@@ -38,11 +38,8 @@ export function DailyBonusModal({ amount, totalSpent }: { amount: number; totalS
           Заходи каждый день — бонус начисляется раз в сутки.
         </p>
         <div className="flex w-full flex-col gap-1.5">
-          <div className="flex items-center justify-between font-mono text-caps text-text-muted">
-            <span>уровень {level}</span>
-            <span>
-              {intoLevel} / {Math.round(forLevel)}
-            </span>
+          <div className="flex items-baseline justify-between">
+            <span className="font-mono text-label uppercase text-gold">уровень {level}</span>
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-inset">
             <div
@@ -50,6 +47,9 @@ export function DailyBonusModal({ amount, totalSpent }: { amount: number; totalS
               style={{ width: `${Math.min(fraction, 1) * 100}%` }}
             />
           </div>
+          <span className="self-end font-mono text-caps text-text-muted">
+            {intoLevel} / {Math.round(forLevel)}
+          </span>
         </div>
         <button
           onClick={close}

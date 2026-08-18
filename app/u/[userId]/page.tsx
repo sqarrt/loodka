@@ -23,16 +23,49 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
 
   const { data: rows } = await supabase
     .from('inventory')
-    .select('id, cashback_value, obtained_at, case_items(name, image_path, description)')
+    .select('id, cashback_value, obtained_at, case_items(name, image_path, description, weight, case_id)')
     .eq('user_id', userId)
     .order('obtained_at', { ascending: false });
 
-  const allItems = mapInventoryToDisplayItems(
-    (rows ?? []) as unknown as InventoryRowWithItem[]
-  ).map((item) => ({
-    ...item,
-    imageUrl: item.image_path ? resolveImageUrl(supabase, item.image_path) : '',
-  }));
+  const rawItems = mapInventoryToDisplayItems((rows ?? []) as unknown as InventoryRowWithItem[]);
+
+  // Rarity and case/author navigation both need each item's odds within its
+  // own case — that means every referenced case's *current* total active
+  // weight, plus that case's title and author. Batch it all rather than
+  // querying per item.
+  const itemCaseIds = [...new Set(rawItems.map((item) => item.caseId).filter((id): id is string => id !== null))];
+
+  const { data: siblingWeightRows } = itemCaseIds.length
+    ? await supabase.from('case_items').select('case_id, weight').in('case_id', itemCaseIds).eq('removed', false)
+    : { data: [] };
+  const totalWeightByCase = new Map<string, number>();
+  for (const row of siblingWeightRows ?? []) {
+    totalWeightByCase.set(row.case_id, (totalWeightByCase.get(row.case_id) ?? 0) + row.weight);
+  }
+
+  const { data: itemCaseRows } = itemCaseIds.length
+    ? await supabase.from('cases').select('id, title, user_id').in('id', itemCaseIds)
+    : { data: [] };
+  const caseMetaById = new Map((itemCaseRows ?? []).map((c) => [c.id, c]));
+
+  const itemAuthorIds = [...new Set((itemCaseRows ?? []).map((c) => c.user_id))];
+  const { data: itemAuthorProfiles } = itemAuthorIds.length
+    ? await supabase.from('profiles').select('user_id, display_name').in('user_id', itemAuthorIds)
+    : { data: [] };
+  const itemAuthorNameById = new Map((itemAuthorProfiles ?? []).map((p) => [p.user_id, p.display_name]));
+
+  const allItems = rawItems.map((item) => {
+    const caseMeta = item.caseId ? caseMetaById.get(item.caseId) : undefined;
+    const totalWeight = item.caseId ? totalWeightByCase.get(item.caseId) : undefined;
+    return {
+      ...item,
+      imageUrl: item.image_path ? resolveImageUrl(supabase, item.image_path) : '',
+      probability: item.weight && totalWeight ? item.weight / totalWeight : undefined,
+      caseTitle: caseMeta?.title ?? null,
+      authorId: caseMeta?.user_id ?? null,
+      authorName: caseMeta ? (itemAuthorNameById.get(caseMeta.user_id) ?? 'игрок') : null,
+    };
+  });
 
   const { data: showcaseRows } = await supabase
     .from('showcase_slots')
@@ -60,6 +93,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
     title: c.title,
     price: c.price,
     itemCount: c.case_items.length,
+    coverImageUrl: c.cover_image_path ? resolveImageUrl(supabase, c.cover_image_path) : null,
   }));
 
   // A case-slot can only ever hold the owner's own case (enforced in
@@ -77,19 +111,17 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
       <div className="flex flex-col gap-1">
         <span className="font-mono text-caps uppercase text-text-muted">профиль</span>
         <h1 className="font-display text-display-lg uppercase">{displayName ?? 'Профиль'}</h1>
-        <div className="flex flex-col gap-1.5 pt-2">
-          <div className="flex items-center gap-2 font-mono text-caps text-text-muted">
-            <span className="text-gold">уровень {level}</span>
-            <span>
-              {intoLevel} / {Math.round(forLevel)}
-            </span>
-          </div>
-          <div className="h-1.5 w-56 overflow-hidden rounded-full bg-inset">
+        <div className="flex w-56 flex-col gap-1.5 pt-2">
+          <span className="font-mono text-label uppercase text-gold">уровень {level}</span>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-inset">
             <div
               className="h-full rounded-full bg-gold"
               style={{ width: `${Math.min(fraction, 1) * 100}%` }}
             />
           </div>
+          <span className="self-end font-mono text-caps text-text-muted">
+            {intoLevel} / {Math.round(forLevel)}
+          </span>
         </div>
       </div>
       <ProfileTabs
