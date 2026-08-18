@@ -31,12 +31,22 @@ type ShowcaseSlot = { inventoryId: string | null; caseId: string | null };
 type CaseDisplay = { title: string; coverImageUrl: string | null };
 
 export function ProfileTabs({
+  displayName,
+  level,
+  intoLevel,
+  forLevel,
+  fraction,
   slots,
   allItems,
   cases,
   caseDisplayById,
   viewerIsOwner,
 }: {
+  displayName: string | null;
+  level: number;
+  intoLevel: number;
+  forLevel: number;
+  fraction: number;
   slots: ShowcaseSlot[];
   allItems: DisplayItem[];
   cases: CaseSummary[];
@@ -47,12 +57,35 @@ export function ProfileTabs({
   const [tab, setTab] = useState<'showcase' | 'inventory' | 'cases'>('showcase');
   const [pickerSlot, setPickerSlot] = useState<number | null>(null);
   const itemsById = new Map(allItems.map((item) => [item.inventoryId, item]));
+  const pickerOpen = pickerSlot !== null;
 
   const TAB_LABELS = { showcase: 'Витрина', inventory: 'Инвентарь', cases: 'Кейсы' } as const;
 
   return (
-    <div className="flex items-start gap-5">
-      <div className="flex min-w-0 flex-1 flex-col gap-5">
+    <div className="flex w-full items-start">
+      <div
+        className={`flex min-w-0 max-w-[1140px] flex-1 flex-col gap-6 py-10 transition-[padding] duration-200 ${
+          pickerOpen ? 'pl-10 pr-6' : 'mx-auto px-10'
+        }`}
+      >
+        <div className="flex flex-col gap-1">
+          <span className="font-mono text-caps uppercase text-text-muted">профиль</span>
+          <h1 className="font-display text-display-lg uppercase">{displayName ?? 'Профиль'}</h1>
+          <div className="flex w-56 flex-col gap-1.5 pt-2">
+            <span className="font-mono text-label uppercase text-gold">уровень {level}</span>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-inset">
+              <div
+                className="h-full rounded-full bg-gold"
+                style={{ width: `${Math.min(fraction, 1) * 100}%` }}
+              />
+            </div>
+            <span className="self-end font-mono text-caps text-text-muted">
+              {intoLevel} / {Math.round(forLevel)}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-5">
       <nav className="flex gap-6 border-b border-line-soft">
         {(['showcase', 'inventory', 'cases'] as const).map((t) => (
           <button
@@ -173,11 +206,11 @@ export function ProfileTabs({
           )}
         </div>
       )}
-
+        </div>
       </div>
 
-      {pickerSlot !== null && (
-        <div className="sticky top-6 h-[calc(100vh-3rem)] w-[380px] shrink-0">
+      {pickerOpen && pickerSlot !== null && (
+        <div className="sticky top-0 h-screen w-full max-w-[400px] shrink-0 py-10 pr-6">
           <ShowcasePicker
             slotIndex={pickerSlot}
             currentInventoryId={slots[pickerSlot].inventoryId}

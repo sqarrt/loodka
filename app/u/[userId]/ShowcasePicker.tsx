@@ -118,20 +118,18 @@ export function ShowcasePicker({
 
   return (
     <div
-      className={`flex h-full flex-col overflow-hidden rounded-lg border border-line-strong bg-surface-card shadow-2xl transition-transform duration-200 ease-out ${
+      className={`relative flex h-full flex-col overflow-hidden rounded-lg border border-line-strong bg-surface-card shadow-2xl transition-transform duration-200 ease-out ${
         open ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
-      <div className="flex items-center justify-end border-b border-line p-3">
-        <button
-          onClick={close}
-          className="flex h-8 w-8 items-center justify-center rounded-md border border-line text-text-secondary hover:border-line-strong hover:text-text-primary"
-        >
-          ×
-        </button>
-      </div>
+      <button
+        onClick={close}
+        className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-md border border-line bg-surface-card text-text-secondary hover:border-line-strong hover:text-text-primary"
+      >
+        ×
+      </button>
 
-      <div className="flex gap-4 border-b border-line-soft px-4 pt-3">
+      <div className="flex gap-4 border-b border-line-soft px-4 pr-14 pt-4">
         {(['items', 'cases'] as const).map((t) => (
           <button
             key={t}

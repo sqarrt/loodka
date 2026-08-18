@@ -107,24 +107,13 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
   );
 
   return (
-    <main className="mx-auto flex w-full max-w-[1140px] flex-col gap-6 px-10 py-10">
-      <div className="flex flex-col gap-1">
-        <span className="font-mono text-caps uppercase text-text-muted">профиль</span>
-        <h1 className="font-display text-display-lg uppercase">{displayName ?? 'Профиль'}</h1>
-        <div className="flex w-56 flex-col gap-1.5 pt-2">
-          <span className="font-mono text-label uppercase text-gold">уровень {level}</span>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-inset">
-            <div
-              className="h-full rounded-full bg-gold"
-              style={{ width: `${Math.min(fraction, 1) * 100}%` }}
-            />
-          </div>
-          <span className="self-end font-mono text-caps text-text-muted">
-            {intoLevel} / {Math.round(forLevel)}
-          </span>
-        </div>
-      </div>
+    <main className="flex w-full flex-1">
       <ProfileTabs
+        displayName={displayName}
+        level={level}
+        intoLevel={intoLevel}
+        forLevel={forLevel}
+        fraction={fraction}
         slots={slots}
         allItems={allItems}
         cases={cases}
