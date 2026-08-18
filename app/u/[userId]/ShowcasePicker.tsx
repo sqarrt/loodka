@@ -12,8 +12,11 @@ import {
 import { ItemThumb } from '@/components/ItemThumb';
 import { CaseThumb } from '@/components/CaseThumb';
 
-type ItemsResult = { items: PickerItem[]; hasMore: boolean };
-type CasesResult = { cases: PickerCase[]; hasMore: boolean };
+type ItemsState = { items: PickerItem[]; hasMore: boolean; nextPage: number };
+type CasesState = { cases: PickerCase[]; hasMore: boolean; nextPage: number };
+
+const EMPTY_ITEMS: ItemsState = { items: [], hasMore: true, nextPage: 0 };
+const EMPTY_CASES: CasesState = { cases: [], hasMore: true, nextPage: 0 };
 
 // Renders as a plain panel — no fixed overlay, no backdrop. The caller
 // (ProfileTabs) places it as a flex sibling next to the tab content so the
@@ -46,17 +49,18 @@ export function ShowcasePicker({
   }
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [page, setPage] = useState(0);
-  const [itemsResult, setItemsResult] = useState<ItemsResult | null>(null);
-  const [casesResult, setCasesResult] = useState<CasesResult | null>(null);
+  const [itemsState, setItemsState] = useState<ItemsState>(EMPTY_ITEMS);
+  const [casesState, setCasesState] = useState<CasesState>(EMPTY_CASES);
   const [isPending, startTransition] = useTransition();
+  const loadingMoreRef = useRef(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Keyed by "tab:query:page" so switching back to an already-visited
-  // tab/page/search combo is instant and never re-requests the same page —
-  // and so a background refetch never has to clear what's already on
-  // screen while it's in flight.
-  const itemsCache = useRef(new Map<string, ItemsResult>());
-  const casesCache = useRef(new Map<string, CasesResult>());
+  // Accumulated results, keyed by search query alone (the list keeps
+  // growing as more pages load) — so returning to a query you already
+  // scrolled through restores where you left off instead of refetching.
+  const itemsCache = useRef(new Map<string, ItemsState>());
+  const casesCache = useRef(new Map<string, CasesState>());
 
   // Mount already off-screen (translate-x-full), then flip to open on the
   // next frame so the transition actually plays instead of the panel just
@@ -72,63 +76,99 @@ export function ShowcasePicker({
     setTimeout(onClose, 200);
   };
 
-  const switchTab = (t: 'items' | 'cases') => {
-    setTab(t);
-    setPage(0);
-  };
-
-  const handleQueryChange = (value: string) => {
-    setQuery(value);
-    setPage(0);
-  };
-
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query), 250);
     return () => clearTimeout(timer);
   }, [query]);
 
+  // Fresh query or tab switch: load page 0 (or restore it from cache).
   useEffect(() => {
-    const key = `${tab}:${debouncedQuery}:${page}`;
-
     if (tab === 'items') {
-      const cached = itemsCache.current.get(key);
+      const cached = itemsCache.current.get(debouncedQuery);
       if (cached) {
-        startTransition(() => setItemsResult(cached));
+        startTransition(() => setItemsState(cached));
         return;
       }
       startTransition(async () => {
-        const result = await getInventoryPage(debouncedQuery, page);
-        itemsCache.current.set(key, result);
-        setItemsResult(result);
+        const result = await getInventoryPage(debouncedQuery, 0);
+        const next: ItemsState = { items: result.items, hasMore: result.hasMore, nextPage: 1 };
+        itemsCache.current.set(debouncedQuery, next);
+        setItemsState(next);
       });
     } else {
-      const cached = casesCache.current.get(key);
+      const cached = casesCache.current.get(debouncedQuery);
       if (cached) {
-        startTransition(() => setCasesResult(cached));
+        startTransition(() => setCasesState(cached));
         return;
       }
       startTransition(async () => {
-        const result = await getOwnCasesPage(debouncedQuery, page);
-        casesCache.current.set(key, result);
-        setCasesResult(result);
+        const result = await getOwnCasesPage(debouncedQuery, 0);
+        const next: CasesState = { cases: result.cases, hasMore: result.hasMore, nextPage: 1 };
+        casesCache.current.set(debouncedQuery, next);
+        setCasesState(next);
       });
     }
-  }, [tab, debouncedQuery, page]);
+  }, [tab, debouncedQuery]);
+
+  // Scrolling near the bottom of the (internally-scrolling) list appends
+  // the next page — root is the scroll container itself, not the viewport,
+  // since this list scrolls independently inside a fixed-height panel.
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    const hasMore = tab === 'items' ? itemsState.hasMore : casesState.hasMore;
+    if (!sentinel || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0].isIntersecting || loadingMoreRef.current) return;
+        loadingMoreRef.current = true;
+        startTransition(async () => {
+          if (tab === 'items') {
+            const result = await getInventoryPage(debouncedQuery, itemsState.nextPage);
+            setItemsState((prev) => {
+              const next: ItemsState = {
+                items: [...prev.items, ...result.items],
+                hasMore: result.hasMore,
+                nextPage: prev.nextPage + 1,
+              };
+              itemsCache.current.set(debouncedQuery, next);
+              return next;
+            });
+          } else {
+            const result = await getOwnCasesPage(debouncedQuery, casesState.nextPage);
+            setCasesState((prev) => {
+              const next: CasesState = {
+                cases: [...prev.cases, ...result.cases],
+                hasMore: result.hasMore,
+                nextPage: prev.nextPage + 1,
+              };
+              casesCache.current.set(debouncedQuery, next);
+              return next;
+            });
+          }
+          loadingMoreRef.current = false;
+        });
+      },
+      { root: scrollRef.current, rootMargin: '300px' }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [tab, debouncedQuery, itemsState.hasMore, itemsState.nextPage, casesState.hasMore, casesState.nextPage]);
 
   const pick = async (selection: { type: 'item'; inventoryId: string } | { type: 'case'; caseId: string } | null) => {
     await setShowcaseSlot(slotIndex, selection);
     // Deliberately doesn't close — only the × button does. Refreshing
-    // updates currentInventoryId/currentCaseId via props, so the "тут"
-    // badge moves to the newly picked item without the panel going away.
+    // updates currentInventoryId/currentCaseId via props, so the ring
+    // highlight moves to the newly picked item without the panel closing.
     router.refresh();
   };
 
-  const items = tab === 'items' ? itemsResult?.items : undefined;
-  const cases = tab === 'cases' ? casesResult?.cases : undefined;
-  const hasMore = (tab === 'items' ? itemsResult?.hasMore : casesResult?.hasMore) ?? false;
-  // Only the very first load of a combo has nothing cached to show yet —
-  // background refetches (e.g. after typing) keep the old grid visible.
-  const showSkeleton = isPending && (tab === 'items' ? items === undefined : cases === undefined);
+  const items = tab === 'items' ? itemsState.items : [];
+  const cases = tab === 'cases' ? casesState.cases : [];
+  const hasMore = tab === 'items' ? itemsState.hasMore : casesState.hasMore;
+  // Only the very first load of a query has nothing to show yet —
+  // background loads (typing, scrolling further) keep the grid visible.
+  const showSkeleton = isPending && (tab === 'items' ? items.length === 0 : cases.length === 0);
 
   return (
     <div
@@ -147,7 +187,7 @@ export function ShowcasePicker({
         {(['items', 'cases'] as const).map((t) => (
           <button
             key={t}
-            onClick={() => switchTab(t)}
+            onClick={() => setTab(t)}
             className={`pb-2.5 font-display text-caps uppercase ${
               tab === t ? 'border-b-2 border-gold text-text-primary' : 'text-text-muted hover:text-text-secondary'
             }`}
@@ -160,13 +200,16 @@ export function ShowcasePicker({
       <div className="border-b border-line-soft p-3">
         <input
           value={query}
-          onChange={(e) => handleQueryChange(e.target.value)}
+          onChange={(e) => setQuery(e.target.value)}
           placeholder="Поиск по названию"
           className="h-9 w-full rounded-md border border-line-strong bg-inset px-3 text-body outline-none focus:border-gold"
         />
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3.5 [scrollbar-color:var(--color-line-strong)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-line-strong [&::-webkit-scrollbar-track]:bg-transparent">
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto p-3.5 [scrollbar-color:var(--color-line-strong)_transparent] [scrollbar-gutter:stable] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-line-strong [&::-webkit-scrollbar-track]:bg-transparent"
+      >
         {showSkeleton && (
           <div className="grid grid-cols-3 gap-2.5">
             {Array.from({ length: 6 }, (_, i) => (
@@ -180,7 +223,7 @@ export function ShowcasePicker({
 
         {!showSkeleton && tab === 'items' && (
           <div className="grid grid-cols-3 gap-2.5">
-            {(items ?? []).map((item) => (
+            {items.map((item) => (
               <button
                 key={item.inventoryId}
                 onClick={() => pick({ type: 'item', inventoryId: item.inventoryId })}
@@ -201,7 +244,7 @@ export function ShowcasePicker({
 
         {!showSkeleton && tab === 'cases' && (
           <div className="grid grid-cols-3 gap-2.5">
-            {(cases ?? []).map((c) => (
+            {cases.map((c) => (
               <button
                 key={c.id}
                 onClick={() => pick({ type: 'case', caseId: c.id })}
@@ -221,30 +264,18 @@ export function ShowcasePicker({
         )}
 
         {!showSkeleton &&
-          ((tab === 'items' && items?.length === 0) || (tab === 'cases' && cases?.length === 0)) && (
+          ((tab === 'items' && items.length === 0) || (tab === 'cases' && cases.length === 0)) && (
             <p className="p-2 text-center text-body text-text-dim">Ничего не найдено</p>
           )}
-      </div>
 
-      {(page > 0 || hasMore) && (
-        <div className="flex items-center justify-between border-t border-line-soft p-3">
-          <button
-            disabled={page === 0}
-            onClick={() => setPage((p) => p - 1)}
-            className="font-mono text-caps uppercase text-text-secondary disabled:opacity-30"
-          >
-            ← назад
-          </button>
-          <span className="font-mono text-caps text-text-dim">стр. {page + 1}</span>
-          <button
-            disabled={!hasMore}
-            onClick={() => setPage((p) => p + 1)}
-            className="font-mono text-caps uppercase text-text-secondary disabled:opacity-30"
-          >
-            вперёд →
-          </button>
-        </div>
-      )}
+        {!showSkeleton && hasMore && (
+          <div ref={sentinelRef} className="flex h-10 items-center justify-center">
+            {isPending && (
+              <span className="font-mono text-caps uppercase text-text-muted">Загружаем…</span>
+            )}
+          </div>
+        )}
+      </div>
 
       {(currentInventoryId || currentCaseId) && (
         <button
