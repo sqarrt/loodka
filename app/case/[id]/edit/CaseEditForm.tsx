@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useActionState, useMemo, useState, useTransition, type ChangeEvent, type FormEvent } from 'react';
 import { updateCase, deleteCase } from '@/app/actions/edit-case';
 import { CurrencyIcon } from '@/components/CurrencyIcon';
 import { ItemThumb } from '@/components/ItemThumb';
@@ -64,6 +64,7 @@ export function CaseEditForm({
   const [coverPreview, setCoverPreview] = useState<string | null>(coverImageUrl);
   const [state, formAction, isPending] = useActionState(updateCase.bind(null, caseId), null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
 
   const odds = useMemo(() => probabilities(items), [items]);
   const created = new Date(createdAt).toLocaleDateString('ru-RU');
@@ -143,7 +144,7 @@ export function CaseEditForm({
     newFiles.forEach((file) => fd.append('newItemImage', file));
     if (coverFile) fd.set('coverImage', coverFile);
 
-    formAction(fd);
+    startTransition(() => formAction(fd));
   };
 
   const handleDelete = async () => {
