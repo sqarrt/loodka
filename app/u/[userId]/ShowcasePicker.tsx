@@ -139,7 +139,9 @@ export function ShowcasePicker({
           />
         </div>
 
-        <div className="min-h-[240px] overflow-auto p-3.5">
+        <div
+          className="flex-1 overflow-y-auto p-3.5 [scrollbar-color:var(--color-line-strong)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-line-strong [&::-webkit-scrollbar-track]:bg-transparent"
+        >
           {showSkeleton && (
             <div className="grid grid-cols-3 gap-2.5">
               {Array.from({ length: 6 }, (_, i) => (
