@@ -164,7 +164,7 @@ export function CaseOpener({
         <div className="absolute inset-y-0 left-1/2 z-4 w-0.5 -translate-x-1/2 bg-gold shadow-[0_0_16px_2px_rgba(245,197,66,0.53)]" />
         <div className="absolute -top-[5px] left-1/2 z-5 h-[11px] w-[11px] -translate-x-1/2 rotate-45 rounded-[2px] bg-gold" />
         <div className="absolute -bottom-[5px] left-1/2 z-5 h-[11px] w-[11px] -translate-x-1/2 rotate-45 rounded-[2px] bg-gold" />
-        <div className="relative h-[150px]">
+        <div className="relative h-[180px]">
           <div
             className="absolute left-1/2 top-0 flex gap-3 will-change-transform"
             style={{
@@ -237,16 +237,16 @@ export function CaseOpener({
             <span className="font-display text-display-lg uppercase leading-none">
               {result.name}
             </span>
-            <span className="text-body text-text-secondary">
+            {result.description && (
+              <p className="text-body text-text-secondary">{result.description}</p>
+            )}
+            <span className="mt-1.5 font-mono text-caps text-text-dim">
               {resultIsPranked
                 ? `Тебя разыграл ${prankState?.by || 'друг'}! Предмет не сохранится в инвентаре. Можешь открыть ещё раз — уже по-настоящему.`
                 : canOpenReal
                   ? 'Предмет уже в инвентаре. Можно поставить на витрину или обменять на лудки.'
                   : 'Демо-открытие — лудки не списаны, предмет не добавлен в инвентарь.'}
             </span>
-            {result.description && (
-              <p className="text-body text-text-secondary">{result.description}</p>
-            )}
           </div>
         </div>
       )}
