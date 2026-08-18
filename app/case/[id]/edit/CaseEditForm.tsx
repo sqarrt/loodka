@@ -386,8 +386,14 @@ export function CaseEditForm({
           </p>
         )}
 
-        <div className="sticky bottom-4 flex flex-col items-center justify-between gap-3 rounded-lg border border-gold bg-surface-raised p-4 shadow-2xl sm:flex-row">
-          <span className="font-mono text-caps text-gold">
+        <div
+          className={`sticky bottom-4 flex flex-col items-center justify-between gap-3 rounded-lg border p-4 sm:flex-row ${
+            changedCount > 0 ? 'border-gold bg-surface-raised shadow-2xl' : 'border-line bg-surface-card'
+          }`}
+        >
+          <span
+            className={`font-mono text-caps ${changedCount > 0 ? 'text-gold' : 'text-text-muted'}`}
+          >
             {changedCount > 0 ? `${changedCount} несохранённых изменения` : 'изменений нет'}
           </span>
           <div className="flex gap-3">
