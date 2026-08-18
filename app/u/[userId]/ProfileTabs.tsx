@@ -216,7 +216,6 @@ export function ProfileTabs({
       {pickerOpen && pickerSlot !== null && (
         <div className="fixed right-4 top-[70px] z-10 h-[calc(100vh-86px)] w-full max-w-[400px]">
           <ShowcasePicker
-            key={pickerSlot}
             slotIndex={pickerSlot}
             currentInventoryId={slots[pickerSlot].inventoryId}
             currentCaseId={slots[pickerSlot].caseId}

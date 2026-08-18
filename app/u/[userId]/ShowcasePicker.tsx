@@ -34,6 +34,16 @@ export function ShowcasePicker({
   // Opens on whichever tab matches what's already in the slot (a case ->
   // "Мои кейсы", an item or an empty slot -> "Предметы").
   const [tab, setTab] = useState<'items' | 'cases'>(currentCaseId ? 'cases' : 'items');
+  // The panel itself doesn't remount when the targeted slot changes (that
+  // would replay the slide-in animation) — but the tab still needs to
+  // follow the new slot's content. Adjusting state during render (rather
+  // than in an effect) is the React-sanctioned way to do that: it re-runs
+  // synchronously before paint, comparing against the last slot we saw.
+  const [trackedSlot, setTrackedSlot] = useState(slotIndex);
+  if (slotIndex !== trackedSlot) {
+    setTrackedSlot(slotIndex);
+    setTab(currentCaseId ? 'cases' : 'items');
+  }
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [page, setPage] = useState(0);
