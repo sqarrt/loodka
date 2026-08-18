@@ -15,6 +15,9 @@ import { CaseThumb } from '@/components/CaseThumb';
 type ItemsResult = { items: PickerItem[]; hasMore: boolean };
 type CasesResult = { cases: PickerCase[]; hasMore: boolean };
 
+// Renders as a plain panel — no fixed overlay, no backdrop. The caller
+// (ProfileTabs) places it as a flex sibling next to the tab content so the
+// two share the row; this component only handles its own slide-in reveal.
 export function ShowcasePicker({
   slotIndex,
   currentInventoryId,
@@ -44,7 +47,7 @@ export function ShowcasePicker({
   const casesCache = useRef(new Map<string, CasesResult>());
 
   // Mount already off-screen (translate-x-full), then flip to open on the
-  // next frame so the transition actually plays instead of the drawer just
+  // next frame so the transition actually plays instead of the panel just
   // appearing already-open. Closing reverses the same way: slide out first,
   // then unmount via onClose once the transition has had time to finish.
   useEffect(() => {
@@ -115,143 +118,132 @@ export function ShowcasePicker({
 
   return (
     <div
-      className={`fixed inset-0 z-10 bg-bg/80 transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'}`}
-      onClick={close}
+      className={`flex h-full flex-col overflow-hidden rounded-lg border border-line-strong bg-surface-card shadow-2xl transition-transform duration-200 ease-out ${
+        open ? 'translate-x-0' : 'translate-x-full'
+      }`}
     >
-      <div
-        className={`fixed inset-y-0 right-0 flex h-full w-full max-w-[420px] flex-col border-l border-line-strong bg-surface-card shadow-2xl transition-transform duration-200 ease-out ${
-          open ? 'translate-x-0' : 'translate-x-full'
-        }`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between border-b border-line p-4">
-          <span className="font-display text-label uppercase">
-            Что поставить в слот {String(slotIndex + 1).padStart(2, '0')}
-          </span>
-          <button
-            onClick={close}
-            className="flex h-8 w-8 items-center justify-center rounded-md border border-line text-text-secondary hover:border-line-strong hover:text-text-primary"
-          >
-            ×
-          </button>
-        </div>
-
-        <div className="flex gap-4 border-b border-line-soft px-4 pt-3">
-          {(['items', 'cases'] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => switchTab(t)}
-              className={`pb-2.5 font-display text-caps uppercase ${
-                tab === t ? 'border-b-2 border-gold text-text-primary' : 'text-text-muted hover:text-text-secondary'
-              }`}
-            >
-              {t === 'items' ? 'Предметы' : 'Мои кейсы'}
-            </button>
-          ))}
-        </div>
-
-        <div className="border-b border-line-soft p-3">
-          <input
-            value={query}
-            onChange={(e) => handleQueryChange(e.target.value)}
-            placeholder="Поиск по названию"
-            className="h-9 w-full rounded-md border border-line-strong bg-inset px-3 text-body outline-none focus:border-gold"
-          />
-        </div>
-
-        <div
-          className="flex-1 overflow-y-auto p-3.5 [scrollbar-color:var(--color-line-strong)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-line-strong [&::-webkit-scrollbar-track]:bg-transparent"
+      <div className="flex items-center justify-end border-b border-line p-3">
+        <button
+          onClick={close}
+          className="flex h-8 w-8 items-center justify-center rounded-md border border-line text-text-secondary hover:border-line-strong hover:text-text-primary"
         >
-          {showSkeleton && (
-            <div className="grid grid-cols-3 gap-2.5">
-              {Array.from({ length: 6 }, (_, i) => (
-                <div key={i} className="flex flex-col gap-1.5">
-                  <div className="aspect-square w-full animate-pulse rounded-md bg-surface-raised" />
-                  <div className="h-2.5 w-3/4 animate-pulse rounded bg-surface-raised" />
-                </div>
-              ))}
-            </div>
-          )}
+          ×
+        </button>
+      </div>
 
-          {!showSkeleton && tab === 'items' && (
-            <div className="grid grid-cols-3 gap-2.5">
-              {(items ?? []).map((item) => (
-                <button
-                  key={item.inventoryId}
-                  onClick={() => pick({ type: 'item', inventoryId: item.inventoryId })}
-                  className="group flex flex-col gap-1.5 text-left"
-                >
-                  <div className="relative">
-                    <ItemThumb imageUrl={item.imageUrl} size="fill" />
-                    {item.inventoryId === currentInventoryId && (
-                      <span className="absolute right-1 top-1 rounded-full border border-gold/60 bg-bg/80 px-1.5 py-0.5 font-mono text-[8px] uppercase text-gold">
-                        тут
-                      </span>
-                    )}
-                  </div>
-                  <span className="truncate text-caps font-semibold group-hover:text-gold">{item.name}</span>
-                </button>
-              ))}
-            </div>
-          )}
+      <div className="flex gap-4 border-b border-line-soft px-4 pt-3">
+        {(['items', 'cases'] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => switchTab(t)}
+            className={`pb-2.5 font-display text-caps uppercase ${
+              tab === t ? 'border-b-2 border-gold text-text-primary' : 'text-text-muted hover:text-text-secondary'
+            }`}
+          >
+            {t === 'items' ? 'Предметы' : 'Мои кейсы'}
+          </button>
+        ))}
+      </div>
 
-          {!showSkeleton && tab === 'cases' && (
-            <div className="grid grid-cols-3 gap-2.5">
-              {(cases ?? []).map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => pick({ type: 'case', caseId: c.id })}
-                  className="group flex flex-col gap-1.5 text-left"
-                >
-                  <div className="relative">
-                    <CaseThumb imageUrl={c.coverImageUrl} size="fill" badge={false} />
-                    {c.id === currentCaseId && (
-                      <span className="absolute right-1 top-1 rounded-full border border-gold/60 bg-bg/80 px-1.5 py-0.5 font-mono text-[8px] uppercase text-gold">
-                        тут
-                      </span>
-                    )}
-                  </div>
-                  <span className="truncate text-caps font-semibold group-hover:text-gold">{c.title}</span>
-                </button>
-              ))}
-            </div>
-          )}
+      <div className="border-b border-line-soft p-3">
+        <input
+          value={query}
+          onChange={(e) => handleQueryChange(e.target.value)}
+          placeholder="Поиск по названию"
+          className="h-9 w-full rounded-md border border-line-strong bg-inset px-3 text-body outline-none focus:border-gold"
+        />
+      </div>
 
-          {!showSkeleton &&
-            ((tab === 'items' && items?.length === 0) || (tab === 'cases' && cases?.length === 0)) && (
-              <p className="p-2 text-center text-body text-text-dim">Ничего не найдено</p>
-            )}
-        </div>
-
-        {(page > 0 || hasMore) && (
-          <div className="flex items-center justify-between border-t border-line-soft p-3">
-            <button
-              disabled={page === 0}
-              onClick={() => setPage((p) => p - 1)}
-              className="font-mono text-caps uppercase text-text-secondary disabled:opacity-30"
-            >
-              ← назад
-            </button>
-            <span className="font-mono text-caps text-text-dim">стр. {page + 1}</span>
-            <button
-              disabled={!hasMore}
-              onClick={() => setPage((p) => p + 1)}
-              className="font-mono text-caps uppercase text-text-secondary disabled:opacity-30"
-            >
-              вперёд →
-            </button>
+      <div className="flex-1 overflow-y-auto p-3.5 [scrollbar-color:var(--color-line-strong)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-line-strong [&::-webkit-scrollbar-track]:bg-transparent">
+        {showSkeleton && (
+          <div className="grid grid-cols-3 gap-2.5">
+            {Array.from({ length: 6 }, (_, i) => (
+              <div key={i} className="flex flex-col gap-1.5">
+                <div className="aspect-square w-full animate-pulse rounded-md bg-surface-raised" />
+                <div className="h-2.5 w-3/4 animate-pulse rounded bg-surface-raised" />
+              </div>
+            ))}
           </div>
         )}
 
-        {(currentInventoryId || currentCaseId) && (
-          <button
-            onClick={() => pick(null)}
-            className="border-t border-line p-3.5 text-center text-label text-text-secondary hover:text-danger"
-          >
-            Освободить слот
-          </button>
+        {!showSkeleton && tab === 'items' && (
+          <div className="grid grid-cols-3 gap-2.5">
+            {(items ?? []).map((item) => (
+              <button
+                key={item.inventoryId}
+                onClick={() => pick({ type: 'item', inventoryId: item.inventoryId })}
+                className="group flex flex-col gap-1.5 text-left"
+              >
+                <div className="relative">
+                  <ItemThumb imageUrl={item.imageUrl} size="fill" />
+                  {item.inventoryId === currentInventoryId && (
+                    <span className="absolute right-1 top-1 rounded-full border border-gold/60 bg-bg/80 px-1.5 py-0.5 font-mono text-[8px] uppercase text-gold">
+                      тут
+                    </span>
+                  )}
+                </div>
+                <span className="truncate text-caps font-semibold group-hover:text-gold">{item.name}</span>
+              </button>
+            ))}
+          </div>
         )}
+
+        {!showSkeleton && tab === 'cases' && (
+          <div className="grid grid-cols-3 gap-2.5">
+            {(cases ?? []).map((c) => (
+              <button
+                key={c.id}
+                onClick={() => pick({ type: 'case', caseId: c.id })}
+                className="group flex flex-col gap-1.5 text-left"
+              >
+                <div className="relative">
+                  <CaseThumb imageUrl={c.coverImageUrl} size="fill" badge={false} />
+                  {c.id === currentCaseId && (
+                    <span className="absolute right-1 top-1 rounded-full border border-gold/60 bg-bg/80 px-1.5 py-0.5 font-mono text-[8px] uppercase text-gold">
+                      тут
+                    </span>
+                  )}
+                </div>
+                <span className="truncate text-caps font-semibold group-hover:text-gold">{c.title}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {!showSkeleton &&
+          ((tab === 'items' && items?.length === 0) || (tab === 'cases' && cases?.length === 0)) && (
+            <p className="p-2 text-center text-body text-text-dim">Ничего не найдено</p>
+          )}
       </div>
+
+      {(page > 0 || hasMore) && (
+        <div className="flex items-center justify-between border-t border-line-soft p-3">
+          <button
+            disabled={page === 0}
+            onClick={() => setPage((p) => p - 1)}
+            className="font-mono text-caps uppercase text-text-secondary disabled:opacity-30"
+          >
+            ← назад
+          </button>
+          <span className="font-mono text-caps text-text-dim">стр. {page + 1}</span>
+          <button
+            disabled={!hasMore}
+            onClick={() => setPage((p) => p + 1)}
+            className="font-mono text-caps uppercase text-text-secondary disabled:opacity-30"
+          >
+            вперёд →
+          </button>
+        </div>
+      )}
+
+      {(currentInventoryId || currentCaseId) && (
+        <button
+          onClick={() => pick(null)}
+          className="border-t border-line p-3.5 text-center text-label text-text-secondary hover:text-danger"
+        >
+          Освободить слот
+        </button>
+      )}
     </div>
   );
 }

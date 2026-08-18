@@ -51,7 +51,8 @@ export function ProfileTabs({
   const TAB_LABELS = { showcase: 'Витрина', inventory: 'Инвентарь', cases: 'Кейсы' } as const;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex items-start gap-5">
+      <div className="flex min-w-0 flex-1 flex-col gap-5">
       <nav className="flex gap-6 border-b border-line-soft">
         {(['showcase', 'inventory', 'cases'] as const).map((t) => (
           <button
@@ -84,7 +85,13 @@ export function ProfileTabs({
                 : undefined;
 
             return (
-              <div key={i} onClick={onClick} className={onClick ? 'cursor-pointer' : undefined}>
+              <div
+                key={i}
+                onClick={onClick}
+                className={`rounded-md ${onClick ? 'cursor-pointer' : ''} ${
+                  pickerSlot === i ? 'ring-2 ring-gold ring-offset-2 ring-offset-bg' : ''
+                }`}
+              >
                 {item ? (
                   <ItemCard
                     name={item.name}
@@ -167,13 +174,17 @@ export function ProfileTabs({
         </div>
       )}
 
+      </div>
+
       {pickerSlot !== null && (
-        <ShowcasePicker
-          slotIndex={pickerSlot}
-          currentInventoryId={slots[pickerSlot].inventoryId}
-          currentCaseId={slots[pickerSlot].caseId}
-          onClose={() => setPickerSlot(null)}
-        />
+        <div className="sticky top-6 h-[calc(100vh-3rem)] w-[380px] shrink-0">
+          <ShowcasePicker
+            slotIndex={pickerSlot}
+            currentInventoryId={slots[pickerSlot].inventoryId}
+            currentCaseId={slots[pickerSlot].caseId}
+            onClose={() => setPickerSlot(null)}
+          />
+        </div>
       )}
     </div>
   );
