@@ -3,11 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShowcasePicker } from './ShowcasePicker';
-import { CurrencyIcon } from '@/components/CurrencyIcon';
 import { ItemCard } from '@/components/ItemCard';
-import { ItemThumb } from '@/components/ItemThumb';
-import { CaseThumb } from '@/components/CaseThumb';
-import { getRarityTier, RARITY_INFO } from '@/lib/rarity';
+import { CaseCard } from '@/components/CaseCard';
 
 type DisplayItem = {
   inventoryId: string;
@@ -72,14 +69,14 @@ export function ProfileTabs({
       </nav>
 
       {tab === 'showcase' && (
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-6">
           {slots.map((slot, i) => {
             const item = slot.inventoryId ? itemsById.get(slot.inventoryId) : null;
             const caseDisplay = slot.caseId ? caseDisplayById[slot.caseId] : null;
-            const filled = Boolean(item || caseDisplay);
-            const itemRarityColor =
-              item?.probability !== undefined ? RARITY_INFO[getRarityTier(item.probability)].colorVar : undefined;
 
+            // Owner clicking any slot (filled or empty) opens the picker to
+            // change it. A non-owner can only ever navigate — and only a
+            // case-slot has somewhere to navigate to.
             const onClick = viewerIsOwner
               ? () => setPickerSlot(i)
               : slot.caseId
@@ -87,30 +84,27 @@ export function ProfileTabs({
                 : undefined;
 
             return (
-              <div
-                key={i}
-                onClick={onClick}
-                className={`flex flex-col overflow-hidden rounded-md border ${
-                  filled ? 'border-line bg-surface-card' : 'border-dashed border-line-strong bg-inset'
-                } ${onClick ? 'cursor-pointer hover:border-gold' : ''}`}
-                style={itemRarityColor ? { borderColor: itemRarityColor } : undefined}
-              >
+              <div key={i} onClick={onClick} className={onClick ? 'cursor-pointer' : undefined}>
                 {item ? (
-                  <>
-                    <ItemThumb imageUrl={item.imageUrl} size="fill" rarityColor={itemRarityColor} />
-                    <div className="px-2.5 py-2">
-                      <span className="truncate text-caps font-semibold">{item.name}</span>
-                    </div>
-                  </>
+                  <ItemCard
+                    name={item.name}
+                    imageUrl={item.imageUrl}
+                    description={item.description}
+                    probability={item.probability}
+                    caseId={item.caseId}
+                    caseTitle={item.caseTitle}
+                    authorId={item.authorId}
+                    authorName={item.authorName}
+                    size="fill"
+                  />
                 ) : caseDisplay ? (
-                  <>
-                    <CaseThumb imageUrl={caseDisplay.coverImageUrl} size="fill" />
-                    <div className="px-2.5 py-2">
-                      <span className="truncate text-caps font-semibold">{caseDisplay.title}</span>
-                    </div>
-                  </>
+                  <CaseCard title={caseDisplay.title} coverImageUrl={caseDisplay.coverImageUrl} badge size="fill" />
                 ) : (
-                  <div className="flex aspect-square w-full flex-col items-center justify-center gap-2">
+                  <div
+                    className={`flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-md border border-dashed border-line-strong bg-inset ${
+                      onClick ? 'hover:border-gold' : ''
+                    }`}
+                  >
                     <span className="h-3.5 w-3.5 rotate-45 rounded-[2px] border border-line-strong" />
                     <span className="font-mono text-caps text-text-dim">
                       слот {String(i + 1).padStart(2, '0')}
@@ -136,39 +130,31 @@ export function ProfileTabs({
               caseTitle={item.caseTitle}
               authorId={item.authorId}
               authorName={item.authorName}
-              size="md"
+              size="fill"
             />
           ))}
         </div>
       )}
 
       {tab === 'cases' && (
-        <div className="flex flex-col gap-2.5">
+        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4">
           {cases.map((c) => (
-            <div
-              key={c.id}
-              className="flex flex-col gap-3 rounded-lg border border-line bg-surface-card p-4 sm:grid sm:grid-cols-[64px_1fr_110px_90px_auto] sm:items-center"
-            >
-              <CaseThumb imageUrl={c.coverImageUrl} size="xs" badge={false} />
-              <span className="font-display text-label uppercase">{c.title}</span>
-              <span className="font-mono text-mono-num text-text-secondary">
-                {c.itemCount} предметов
-              </span>
-              <span className="flex items-center gap-2 font-mono text-label font-bold">
-                <CurrencyIcon size={12} /> {c.price}
-              </span>
-              <div className="flex gap-2 sm:justify-self-end">
+            <div key={c.id} className="flex flex-col gap-2">
+              <a href={`/case/${c.id}`}>
+                <CaseCard title={c.title} coverImageUrl={c.coverImageUrl} itemCount={c.itemCount} price={c.price} size="fill" />
+              </a>
+              <div className="flex gap-2">
                 {viewerIsOwner && (
                   <a
                     href={`/case/${c.id}/edit`}
-                    className="flex h-9 items-center justify-center rounded-md border border-line-strong px-3 font-mono text-caps uppercase text-text-secondary hover:border-gold hover:text-gold"
+                    className="flex h-9 flex-1 items-center justify-center rounded-md border border-line-strong px-3 font-mono text-caps uppercase text-text-secondary hover:border-gold hover:text-gold"
                   >
                     изменить
                   </a>
                 )}
                 <a
                   href={`/case/${c.id}`}
-                  className="flex h-9 items-center justify-center rounded-md border border-gold px-3 font-mono text-caps uppercase text-gold hover:bg-gold/10"
+                  className="flex h-9 flex-1 items-center justify-center rounded-md border border-gold px-3 font-mono text-caps uppercase text-gold hover:bg-gold/10"
                 >
                   открыть
                 </a>

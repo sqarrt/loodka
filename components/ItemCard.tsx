@@ -9,9 +9,15 @@ const CARD_WIDTH = {
   lg: 'w-44', // 176px
   md: 'w-37', // 148px
   sm: 'w-30', // 120px
+  fill: 'w-full',
 } as const;
 
-const SIZE_CLASSES_PX = { lg: 'w-44 h-44', md: 'w-37 h-37', sm: 'w-30 h-30' } as const;
+const SIZE_CLASSES_PX = {
+  lg: 'w-44 h-44',
+  md: 'w-37 h-37',
+  sm: 'w-30 h-30',
+  fill: 'w-full aspect-square',
+} as const;
 
 export function ItemCard({
   name,
@@ -33,7 +39,7 @@ export function ItemCard({
   caseTitle?: string | null;
   authorId?: string | null;
   authorName?: string | null;
-  size?: 'lg' | 'md' | 'sm';
+  size?: 'lg' | 'md' | 'sm' | 'fill';
   state?: 'default' | 'loading' | 'disabled';
 }) {
   const [hovered, setHovered] = useState(false);
@@ -79,7 +85,13 @@ export function ItemCard({
         <div className="h-[3px]" style={{ background: info.colorVar }} />
       </div>
       {caseId && authorId && (
-        <div className="mt-1 flex flex-col gap-0.5 truncate font-mono text-[10px] text-text-dim">
+        // stopPropagation — this card may be nested inside a clickable
+        // showcase-slot wrapper (open the picker on click); these links
+        // must navigate instead of triggering that.
+        <div
+          className="mt-1 flex flex-col gap-0.5 truncate font-mono text-[10px] text-text-dim"
+          onClick={(e) => e.stopPropagation()}
+        >
           {caseTitle && (
             <Link href={`/case/${caseId}`} className="truncate hover:text-text-secondary hover:underline">
               {caseTitle}
