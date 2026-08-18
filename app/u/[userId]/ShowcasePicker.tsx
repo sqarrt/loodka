@@ -174,13 +174,12 @@ export function ShowcasePicker({
                 onClick={() => pick({ type: 'item', inventoryId: item.inventoryId })}
                 className="group flex flex-col gap-1.5 text-left"
               >
-                <div className="relative">
+                <div
+                  className={`rounded-md ${
+                    item.inventoryId === currentInventoryId ? 'ring-2 ring-gold ring-offset-2 ring-offset-surface-card' : ''
+                  }`}
+                >
                   <ItemThumb imageUrl={item.imageUrl} size="fill" />
-                  {item.inventoryId === currentInventoryId && (
-                    <span className="absolute right-1 top-1 rounded-full border border-gold/60 bg-bg/80 px-1.5 py-0.5 font-mono text-[8px] uppercase text-gold">
-                      тут
-                    </span>
-                  )}
                 </div>
                 <span className="truncate text-caps font-semibold group-hover:text-gold">{item.name}</span>
               </button>
@@ -196,13 +195,12 @@ export function ShowcasePicker({
                 onClick={() => pick({ type: 'case', caseId: c.id })}
                 className="group flex flex-col gap-1.5 text-left"
               >
-                <div className="relative">
+                <div
+                  className={`rounded-md ${
+                    c.id === currentCaseId ? 'ring-2 ring-gold ring-offset-2 ring-offset-surface-card' : ''
+                  }`}
+                >
                   <CaseThumb imageUrl={c.coverImageUrl} size="fill" badge={false} />
-                  {c.id === currentCaseId && (
-                    <span className="absolute right-1 top-1 rounded-full border border-gold/60 bg-bg/80 px-1.5 py-0.5 font-mono text-[8px] uppercase text-gold">
-                      тут
-                    </span>
-                  )}
                 </div>
                 <span className="truncate text-caps font-semibold group-hover:text-gold">{c.title}</span>
               </button>
