@@ -71,6 +71,26 @@ export function ShowcasePicker({
     return () => cancelAnimationFrame(frame);
   }, []);
 
+  // Below sm, the picker is a full-screen sheet with its own scroll area —
+  // any touch drag that lands outside that area (e.g. the blank space below
+  // a short results list) would otherwise fall through to the page behind
+  // it, since a bare `overflow-hidden` div doesn't claim the scroll gesture
+  // the way `overflow-y-auto` does. Lock body scroll for exactly as long as
+  // that's true. Desktop's side panel intentionally leaves the rest of the
+  // page scrollable, so this only applies below the sheet breakpoint.
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 639px)');
+    const apply = () => {
+      document.body.style.overflow = mql.matches ? 'hidden' : '';
+    };
+    apply();
+    mql.addEventListener('change', apply);
+    return () => {
+      mql.removeEventListener('change', apply);
+      document.body.style.overflow = '';
+    };
+  }, []);
+
   const close = () => {
     setOpen(false);
     setTimeout(onClose, 200);
