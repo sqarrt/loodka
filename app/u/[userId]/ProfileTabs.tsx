@@ -69,17 +69,23 @@ export function ProfileTabs({
   return (
     <>
       <div
-        className={`mx-auto flex w-full flex-col gap-6 px-10 py-10 transition-[max-width] duration-200 ${
+        className={`mx-auto flex w-full max-w-[1140px] flex-col gap-6 px-10 py-10 transition-[max-width] duration-200 ${
           // Content is centered against the real viewport, same as when the
           // picker is closed — it only gives up width once the picker would
           // actually reach it (100vw - picker - gap), not on every open.
           // That's what keeps it in place on screens with room to spare.
-          pickerOpen ? 'max-w-[min(1140px,calc(100vw_-_440px))]' : 'max-w-[1140px]'
+          // sm+ only: on mobile the picker is a full-screen overlay (not a
+          // side panel), so the content behind it never needs to shrink —
+          // `100vw - 440px` goes negative below 440px wide and collapses
+          // this container to 0, which is what was overflowing the page.
+          pickerOpen ? 'sm:max-w-[min(1140px,calc(100vw_-_440px))]' : ''
         }`}
       >
         <div className="flex flex-col gap-1">
           <span className="font-mono text-caps uppercase text-text-muted">профиль</span>
-          <h1 className="font-display text-display-lg uppercase">{displayName ?? 'Профиль'}</h1>
+          <h1 className="break-words font-display text-heading uppercase sm:text-display-lg">
+            {displayName ?? 'Профиль'}
+          </h1>
           <div className="flex w-56 flex-col gap-1.5 pt-2">
             <span className="font-mono text-label uppercase text-gold">уровень {level}</span>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-inset">
@@ -235,7 +241,12 @@ export function ProfileTabs({
       </div>
 
       {pickerOpen && pickerSlot !== null && (
-        <div className="fixed right-4 top-[70px] z-10 h-[calc(100vh-86px)] w-full max-w-[400px]">
+        // Mobile: a genuine full-screen sheet (the old `w-full max-w-[400px]`
+        // math broke down below 400px — `right-4` + `width:100%` solves to a
+        // negative `left`, sliding the panel 16px past the left edge and
+        // making every element inside it click off-target). Desktop keeps
+        // the original fixed-width side panel unchanged.
+        <div className="fixed inset-0 z-40 sm:inset-auto sm:right-4 sm:top-[70px] sm:z-10 sm:h-[calc(100vh-86px)] sm:w-[400px]">
           <ShowcasePicker
             slotIndex={pickerSlot}
             currentInventoryId={slots[pickerSlot].inventoryId}

@@ -52,12 +52,17 @@ export function CaseCard({
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-1/2 bg-gradient-to-t from-black/70 to-transparent" />
       )}
       {topRarity && (
+        // max-w leaves room for the edit pencil (top-right, ~54px incl. its
+        // own margin) so the two never overlap on narrow cards — the badge
+        // truncates with an ellipsis instead of running under the button.
         <span
-          className="absolute left-2.5 top-2.5 z-20 inline-flex items-center gap-1.5 rounded-full border bg-bg/70 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.08em]"
+          className={`absolute left-2.5 top-2.5 z-20 inline-flex items-center gap-1.5 overflow-hidden rounded-full border bg-bg/70 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.08em] ${
+            editable ? 'max-w-[calc(100%-64px)]' : 'max-w-[calc(100%-20px)]'
+          }`}
           style={{ borderColor: accent, color: accent }}
         >
-          <span className="h-1.5 w-1.5 rounded-full" style={{ background: accent }} />
-          топ: {RARITY_INFO[topRarity].name.toLowerCase()}
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: accent }} />
+          <span className="truncate">топ: {RARITY_INFO[topRarity].name.toLowerCase()}</span>
         </span>
       )}
     </CaseThumb>
@@ -68,7 +73,7 @@ export function CaseCard({
   );
 
   const authorBlock = authorName ? (
-    <span className="font-mono text-label text-text-secondary">@{authorName}</span>
+    <span className="min-w-0 flex-1 truncate font-mono text-label text-text-secondary">@{authorName}</span>
   ) : null;
 
   return (
@@ -116,16 +121,19 @@ export function CaseCard({
           </div>
         )}
         {(authorBlock || price !== undefined) && (
-          <div className="mt-auto flex items-center justify-between border-t border-line-soft pt-2.5">
+          <div className="mt-auto flex items-center gap-2 border-t border-line-soft pt-2.5">
             {linked && authorId && authorName ? (
-              <Link href={`/u/${authorId}`} className="font-mono text-label text-text-secondary hover:text-gold hover:underline">
+              <Link
+                href={`/u/${authorId}`}
+                className="min-w-0 flex-1 truncate font-mono text-label text-text-secondary hover:text-gold hover:underline"
+              >
                 @{authorName}
               </Link>
             ) : (
               authorBlock ?? <span />
             )}
             {price !== undefined && (
-              <span className="ml-auto flex items-center gap-1.5 font-mono font-bold text-body text-text-primary">
+              <span className="ml-auto flex shrink-0 items-center gap-1.5 font-mono font-bold text-body text-text-primary">
                 <CurrencyIcon size={13} /> {price}
               </span>
             )}

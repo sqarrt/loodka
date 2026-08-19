@@ -172,7 +172,7 @@ export function ShowcasePicker({
 
   return (
     <div
-      className={`relative flex h-full flex-col overflow-hidden rounded-lg border border-line-strong bg-surface-card shadow-2xl transition-transform duration-200 ease-out ${
+      className={`relative flex h-full flex-col overflow-hidden border-line-strong bg-surface-card shadow-2xl transition-transform duration-200 ease-out sm:rounded-lg sm:border ${
         open ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
@@ -208,7 +208,12 @@ export function ShowcasePicker({
 
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-3.5 [scrollbar-color:var(--color-line-strong)_transparent] [scrollbar-gutter:stable] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-line-strong [&::-webkit-scrollbar-track]:bg-transparent"
+        // min-h-0 (not flex-1): sizes to its content, capped by whatever
+        // space is actually left in the panel — a short results list no
+        // longer force-stretches to fill the rest of the viewport with
+        // blank space before "Освободить слот"; a long one still scrolls
+        // internally instead of pushing that button off-screen.
+        className="min-h-0 overflow-y-auto p-3.5 [scrollbar-color:var(--color-line-strong)_transparent] [scrollbar-gutter:stable] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-line-strong [&::-webkit-scrollbar-track]:bg-transparent"
       >
         {showSkeleton && (
           <div className="grid grid-cols-3 gap-2.5">
