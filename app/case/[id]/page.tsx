@@ -101,16 +101,19 @@ export default async function CasePage({
           <h2 className="font-display text-heading uppercase">Что может выпасть</h2>
           <CasePrankButton caseId={caseRow.id} items={itemsWithOdds} displayName={displayName} />
         </div>
-        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-6">
+        {/* Horizontal scroll, not a wrapping grid — a case can have a lot of
+            items, and a grid would just grow the page taller without bound. */}
+        <div className="flex gap-3.5 overflow-x-auto pb-2 [scrollbar-color:var(--color-line-strong)_transparent] [scrollbar-gutter:stable] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-line-strong [&::-webkit-scrollbar-track]:bg-transparent">
           {itemsWithOdds.map((item) => (
-            <ItemCard
-              key={item.id}
-              name={item.name}
-              imageUrl={item.imageUrl}
-              probability={item.probability}
-              description={item.description}
-              size="lg"
-            />
+            <div key={item.id} className="shrink-0">
+              <ItemCard
+                name={item.name}
+                imageUrl={item.imageUrl}
+                probability={item.probability}
+                description={item.description}
+                size="lg"
+              />
+            </div>
           ))}
         </div>
       </div>
