@@ -21,5 +21,6 @@ export async function openCaseForReal(caseId: string) {
     itemId: result.item_id as string,
     cashbackValue: result.cashback_value as number,
     newBalance: result.new_balance as number,
+    inventoryId: result.inventory_id as string,
   };
 }

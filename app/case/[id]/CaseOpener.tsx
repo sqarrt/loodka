@@ -11,7 +11,7 @@ import {
   CARD_WIDTH_PX,
 } from '@/lib/cases';
 import { openCaseForReal } from '@/app/actions/open-case-for-real';
-import { ItemCard } from '@/components/ItemCard';
+import { cashBackItem } from '@/app/actions/cash-back-item';
 import { ItemThumb } from '@/components/ItemThumb';
 import { Button } from '@/components/Button';
 import { CurrencyIcon } from '@/components/CurrencyIcon';
@@ -66,6 +66,12 @@ export function CaseOpener({
   const [pranked, setPranked] = useState(!!prankState);
   const [resultIsPranked, setResultIsPranked] = useState(false);
 
+  // Only set for a real (non-demo, non-pranked) win — that's the one case
+  // where the item actually landed in the inventory and can be sold back.
+  const [saleInfo, setSaleInfo] = useState<{ inventoryId: string; cashbackValue: number } | null>(null);
+  const [selling, setSelling] = useState(false);
+  const [sold, setSold] = useState(false);
+
   // Mask the link immediately on load, not just after it's opened — a
   // pranked link should look like any other case link at a glance.
   useEffect(() => {
@@ -87,6 +93,8 @@ export function CaseOpener({
     // browser animates the reset itself instead of the spin (only visible
     // from the 2nd spin on, once offset/phase are no longer both at rest).
     setResult(null);
+    setSaleInfo(null);
+    setSold(false);
     setStrip(reel);
     setTransitioning(false);
     setOffset(0);
@@ -149,7 +157,28 @@ export function CaseOpener({
     const winner = items.find((item) => item.id === response.itemId);
     setBalance(response.newBalance ?? balance);
     router.refresh();
-    if (winner) animateTo(winner);
+    if (winner) {
+      // response.itemId matched an item here, so we're necessarily in the
+      // success branch (the error branch never sets itemId) — TS just
+      // can't prove that itself from the loose `{error?}` return shape.
+      animateTo(winner);
+      setSaleInfo({ inventoryId: response.inventoryId!, cashbackValue: response.cashbackValue! });
+    }
+  };
+
+  const handleSell = async () => {
+    if (!saleInfo) return;
+    setSelling(true);
+    const response = await cashBackItem(saleInfo.inventoryId);
+    setSelling(false);
+
+    if (response.error) {
+      setError(response.error);
+      return;
+    }
+
+    setBalance((b) => (b ?? 0) + (response.creditedAmount ?? 0));
+    setSold(true);
   };
 
   const insufficientFunds = canOpenReal && (balance ?? 0) < price;
@@ -187,7 +216,7 @@ export function CaseOpener({
           <Button
             variant={phase === 'spinning' ? 'loading' : insufficientFunds ? 'disabled' : 'cta'}
             onClick={handleRealOpen}
-            className="min-w-[340px]"
+            className="w-full max-w-[340px]"
           >
             {phase === 'spinning' ? (
               'Крутим…'
@@ -208,7 +237,7 @@ export function CaseOpener({
           <Button
             variant={phase === 'spinning' ? 'loading' : 'demo'}
             onClick={handleDemoOpen}
-            className="min-w-[340px]"
+            className="w-full max-w-[340px]"
           >
             {phase === 'spinning' ? 'Крутим…' : 'Открыть (демо)'}
           </Button>
@@ -226,29 +255,55 @@ export function CaseOpener({
       </div>
 
       {phase === 'result' && result && (
+        // Named grid areas, not flex+order — mobile needs the name to
+        // escape above the image while description/button/helper stay
+        // grouped in a column beside it on desktop, and plain flex `order`
+        // can't regroup items differently per breakpoint like that without
+        // duplicating content.
         <div
-          className="flex items-center gap-6 rounded-lg border bg-inset p-6"
+          className="grid grid-cols-1 gap-4 rounded-lg border bg-inset p-6 [grid-template-areas:'name'_'image'_'desc'_'button'_'helper'] sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start sm:gap-x-6 sm:gap-y-2 sm:[grid-template-areas:'image_name'_'image_desc'_'image_button'_'image_helper']"
           style={{ borderColor: 'var(--color-gold)' }}
         >
-          <div className="shrink-0">
-            <ItemCard name={result.name} imageUrl={result.imageUrl} size="lg" />
+          <span className="min-w-0 break-words font-display text-display-lg uppercase leading-none [grid-area:name]">
+            {result.name}
+          </span>
+          <div className="shrink-0 [grid-area:image]">
+            <ItemThumb imageUrl={result.imageUrl} size="lg" />
           </div>
-          <div className="flex flex-1 flex-col gap-2">
-            <span className="font-mono text-caps uppercase text-gold">выпало</span>
-            <span className="font-display text-display-lg uppercase leading-none">
-              {result.name}
-            </span>
-            {result.description && (
-              <p className="text-body text-text-secondary">{result.description}</p>
+          {result.description && (
+            <p className="min-w-0 text-body text-text-secondary [grid-area:desc]">
+              {result.description}
+            </p>
+          )}
+          <div className="min-w-0 [grid-area:button]">
+            {saleInfo && !sold && (
+              <button
+                onClick={handleSell}
+                disabled={selling}
+                className="flex h-11 w-fit items-center gap-2 whitespace-nowrap rounded-md border border-[#2E4A3E] bg-[#122019] px-4 font-mono text-label font-bold text-success hover:border-success hover:bg-[#16281F] disabled:opacity-50"
+              >
+                {selling ? (
+                  'Продаём…'
+                ) : (
+                  <>
+                    Продать за <CurrencyIcon size={11} /> {saleInfo.cashbackValue}
+                  </>
+                )}
+              </button>
             )}
-            <span className="mt-1.5 font-mono text-caps text-text-dim">
-              {resultIsPranked
-                ? `Тебя разыграл ${prankState?.by || 'друг'}! Предмет не сохранится в инвентаре. Можешь открыть ещё раз — уже по-настоящему.`
-                : canOpenReal
-                  ? 'Предмет уже в инвентаре. Можно поставить на витрину или обменять на лудки.'
-                  : 'Демо-открытие — лудки не списаны, предмет не добавлен в инвентарь.'}
-            </span>
+            {sold && (
+              <span className="font-mono text-caps text-success">
+                Продано за {saleInfo?.cashbackValue} лудок
+              </span>
+            )}
           </div>
+          <span className="min-w-0 font-mono text-caps text-text-dim [grid-area:helper]">
+            {resultIsPranked
+              ? `Тебя разыграл ${prankState?.by || 'друг'}! Предмет не сохранится в инвентаре. Можешь открыть ещё раз — уже по-настоящему.`
+              : canOpenReal
+                ? 'Предмет уже в инвентаре. Можно поставить на витрину или обменять на лудки.'
+                : 'Демо-открытие — лудки не списаны, предмет не добавлен в инвентарь.'}
+          </span>
         </div>
       )}
     </div>

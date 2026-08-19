@@ -55,6 +55,69 @@ export function CatalogFilters({
     priceMax: priceMax ? String(priceMax) : undefined,
   };
 
+  const filtersForm = (
+    <form
+      method="get"
+      className="grid grid-cols-1 items-end gap-3 rounded-lg border border-line bg-inset p-4 sm:grid-cols-[2fr_1fr_100px_100px_auto]"
+    >
+      <input type="hidden" name="sort" value={sort} />
+      <input type="hidden" name="dir" value={dir} />
+      <label className="flex flex-col gap-1.5">
+        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">
+          название
+        </span>
+        <SuggestInput
+          name="title"
+          defaultValue={title}
+          fetchSuggestions={getTitleSuggestions}
+          inputClassName={inputClass}
+        />
+      </label>
+      <label className="flex flex-col gap-1.5">
+        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">
+          автор
+        </span>
+        <SuggestInput
+          name="author"
+          defaultValue={author}
+          fetchSuggestions={getAuthorSuggestions}
+          hintSuffix=" кейсов"
+          inputClassName={inputClass}
+        />
+      </label>
+      <label className="flex flex-col gap-1.5">
+        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">
+          цена от
+        </span>
+        <input
+          name="priceMin"
+          type="number"
+          min={1}
+          defaultValue={priceMin}
+          className={`${inputClass} font-mono`}
+        />
+      </label>
+      <label className="flex flex-col gap-1.5">
+        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">
+          цена до
+        </span>
+        <input
+          name="priceMax"
+          type="number"
+          min={1}
+          defaultValue={priceMax}
+          className={`${inputClass} font-mono`}
+        />
+      </label>
+      <button
+        type="submit"
+        className="flex h-10 items-center justify-center rounded-md bg-gold px-5 font-display text-caps uppercase text-bg hover:bg-gold-hover"
+      >
+        Найти
+      </button>
+    </form>
+  );
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -81,66 +144,21 @@ export function CatalogFilters({
         })}
       </div>
 
-      <form
-        method="get"
-        className="grid grid-cols-1 items-end gap-3 rounded-lg border border-line bg-inset p-4 sm:grid-cols-[2fr_1fr_100px_100px_auto]"
-      >
-        <input type="hidden" name="sort" value={sort} />
-        <input type="hidden" name="dir" value={dir} />
-        <label className="flex flex-col gap-1.5">
-          <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">
-            название
+      {/* Mobile: filters collapse behind a tap target so they don't push
+          the actual catalog results below the fold — narrowing what's
+          already on screen shouldn't outweigh seeing it in the first
+          place. Pure <details>/<summary>, no JS needed. Desktop keeps
+          them always open, unchanged. */}
+      <details className="group sm:hidden">
+        <summary className="flex h-10 cursor-pointer list-none items-center justify-between rounded-md border border-line bg-inset px-4 font-mono text-caps uppercase text-text-secondary [&::-webkit-details-marker]:hidden">
+          Фильтры
+          <span aria-hidden className="transition-transform group-open:rotate-180">
+            ⌄
           </span>
-          <SuggestInput
-            name="title"
-            defaultValue={title}
-            fetchSuggestions={getTitleSuggestions}
-            inputClassName={inputClass}
-          />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">
-            автор
-          </span>
-          <SuggestInput
-            name="author"
-            defaultValue={author}
-            fetchSuggestions={getAuthorSuggestions}
-            hintSuffix=" кейсов"
-            inputClassName={inputClass}
-          />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">
-            цена от
-          </span>
-          <input
-            name="priceMin"
-            type="number"
-            min={1}
-            defaultValue={priceMin}
-            className={`${inputClass} font-mono`}
-          />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">
-            цена до
-          </span>
-          <input
-            name="priceMax"
-            type="number"
-            min={1}
-            defaultValue={priceMax}
-            className={`${inputClass} font-mono`}
-          />
-        </label>
-        <button
-          type="submit"
-          className="flex h-10 items-center justify-center rounded-md bg-gold px-5 font-display text-caps uppercase text-bg hover:bg-gold-hover"
-        >
-          Найти
-        </button>
-      </form>
+        </summary>
+        <div className="pt-3">{filtersForm}</div>
+      </details>
+      <div className="hidden sm:block">{filtersForm}</div>
     </div>
   );
 }
