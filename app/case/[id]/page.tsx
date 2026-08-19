@@ -64,19 +64,19 @@ export default async function CasePage({
 
   return (
     <main className="mx-auto flex w-full max-w-[1140px] flex-1 flex-col gap-7 px-10 py-10">
-      <div className="flex items-end justify-between gap-6">
-        <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-end justify-between gap-6">
+        <div className="flex min-w-0 flex-col gap-2">
           <span className="font-mono text-caps uppercase text-text-muted">
             {items.length} предметов
           </span>
-          <h1 className="font-display text-display-xl uppercase leading-none">
+          <h1 className="break-words font-display text-display-lg uppercase leading-none sm:text-display-xl">
             {caseRow.title}
           </h1>
           <a href={`/u/${caseRow.user_id}`} className="w-fit font-mono text-caps text-text-secondary hover:text-gold">
             @{authorName}
           </a>
         </div>
-        <div className="flex flex-col items-end gap-1">
+        <div className="flex shrink-0 flex-col items-end gap-1">
           <span className="font-mono text-caps uppercase text-text-muted">
             цена крутки
           </span>
