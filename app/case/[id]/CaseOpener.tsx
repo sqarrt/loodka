@@ -12,6 +12,7 @@ import {
 } from '@/lib/cases';
 import { openCaseForReal } from '@/app/actions/open-case-for-real';
 import { ItemCard } from '@/components/ItemCard';
+import { ItemThumb } from '@/components/ItemThumb';
 import { Button } from '@/components/Button';
 import { CurrencyIcon } from '@/components/CurrencyIcon';
 
@@ -175,7 +176,7 @@ export function CaseOpener({
             }}
           >
             {strip.map((item, i) => (
-              <ItemCard key={i} name={item.name} imageUrl={item.imageUrl} size="sm" />
+              <ItemThumb key={i} imageUrl={item.imageUrl} description={item.description} size="sm" />
             ))}
           </div>
         </div>

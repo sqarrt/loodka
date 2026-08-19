@@ -9,8 +9,8 @@ import {
   type PickerItem,
   type PickerCase,
 } from '@/app/actions/showcase-picker-data';
-import { ItemThumb } from '@/components/ItemThumb';
-import { CaseThumb } from '@/components/CaseThumb';
+import { ItemCard } from '@/components/ItemCard';
+import { CaseCard } from '@/components/CaseCard';
 
 type ItemsState = { items: PickerItem[]; hasMore: boolean; nextPage: number };
 type CasesState = { cases: PickerCase[]; hasMore: boolean; nextPage: number };
@@ -227,16 +227,15 @@ export function ShowcasePicker({
               <button
                 key={item.inventoryId}
                 onClick={() => pick({ type: 'item', inventoryId: item.inventoryId })}
-                className="group flex flex-col gap-1.5 text-left"
+                className="text-left"
               >
                 <div
                   className={`rounded-md ${
                     item.inventoryId === currentInventoryId ? 'ring-2 ring-gold ring-offset-2 ring-offset-surface-card' : ''
                   }`}
                 >
-                  <ItemThumb imageUrl={item.imageUrl} size="fill" />
+                  <ItemCard name={item.name} imageUrl={item.imageUrl} size="fill" />
                 </div>
-                <span className="truncate text-caps font-semibold group-hover:text-gold">{item.name}</span>
               </button>
             ))}
           </div>
@@ -248,16 +247,15 @@ export function ShowcasePicker({
               <button
                 key={c.id}
                 onClick={() => pick({ type: 'case', caseId: c.id })}
-                className="group flex flex-col gap-1.5 text-left"
+                className="text-left"
               >
                 <div
                   className={`rounded-md ${
                     c.id === currentCaseId ? 'ring-2 ring-gold ring-offset-2 ring-offset-surface-card' : ''
                   }`}
                 >
-                  <CaseThumb imageUrl={c.coverImageUrl} size="fill" badge={false} />
+                  <CaseCard caseId={c.id} title={c.title} coverImageUrl={c.coverImageUrl} size="fill" linked={false} />
                 </div>
-                <span className="truncate text-caps font-semibold group-hover:text-gold">{c.title}</span>
               </button>
             ))}
           </div>

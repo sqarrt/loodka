@@ -3,70 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { loadMoreCases } from '@/app/actions/load-more-cases';
-import { RARITY_INFO } from '@/lib/rarity';
-import { CurrencyIcon } from '@/components/CurrencyIcon';
+import { CaseCard } from '@/components/CaseCard';
 import type { CatalogCase, CatalogFilters } from '@/lib/catalog';
-
-function CaseCard({ c }: { c: CatalogCase }) {
-  const accent = RARITY_INFO[c.topRarity].colorVar;
-  const created = new Date(c.createdAt).toLocaleDateString('ru-RU', {
-    day: '2-digit',
-    month: '2-digit',
-    year: '2-digit',
-  });
-
-  return (
-    <div className="group flex flex-col overflow-hidden rounded-lg border border-line bg-surface-card transition-all hover:-translate-y-0.5 hover:border-line-strong hover:bg-surface-raised">
-      <Link href={`/case/${c.id}`} className="contents">
-        <div className="relative flex aspect-square w-full items-end overflow-hidden bg-[repeating-linear-gradient(135deg,var(--color-surface-raised)_0_8px,var(--color-line)_8px_16px)] p-2.5">
-          {c.coverImageUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={c.coverImageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
-          )}
-          {c.coverImageUrl && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
-          )}
-          <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-14 opacity-20"
-            style={{ background: `linear-gradient(to top, ${accent}, transparent)` }}
-          />
-          <span
-            className="relative rounded-full border bg-bg/70 px-2 py-1 font-mono text-[9px] uppercase tracking-[0.1em]"
-            style={{ borderColor: accent, color: accent }}
-          >
-            топ: {RARITY_INFO[c.topRarity].name.toLowerCase()}
-          </span>
-        </div>
-      </Link>
-      <div className="flex flex-1 flex-col gap-2.5 p-3.5">
-        <div className="flex flex-col gap-1">
-          <Link
-            href={`/case/${c.id}`}
-            className="truncate font-display text-label uppercase leading-tight hover:text-gold"
-          >
-            {c.title}
-          </Link>
-          <span className="truncate font-mono text-[10px] text-text-dim">
-            <Link href={`/u/${c.authorId}`} className="hover:text-text-secondary hover:underline">
-              @{c.authorName}
-            </Link>
-            {' · '}
-            {c.itemCount} предметов · {created}
-          </span>
-        </div>
-        <Link href={`/case/${c.id}`} className="mt-auto flex items-center justify-between">
-          <span className="flex items-center gap-2 font-mono text-body font-bold">
-            <CurrencyIcon size={13} /> {c.price}
-          </span>
-          <span className="flex h-8 items-center rounded-md border border-gold px-3 font-mono text-[11px] uppercase tracking-[0.08em] text-gold group-hover:bg-gold/10">
-            крутить
-          </span>
-        </Link>
-      </div>
-      <div className="h-[3px]" style={{ background: accent }} />
-    </div>
-  );
-}
 
 export function CatalogGrid({
   initialCases,
@@ -122,9 +60,21 @@ export function CatalogGrid({
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4">
         {cases.map((c) => (
-          <CaseCard key={c.id} c={c} />
+          <CaseCard
+            key={c.id}
+            caseId={c.id}
+            title={c.title}
+            coverImageUrl={c.coverImageUrl}
+            itemCount={c.itemCount}
+            price={c.price}
+            topRarity={c.topRarity}
+            authorId={c.authorId}
+            authorName={c.authorName}
+            createdAt={c.createdAt}
+            size="fill"
+          />
         ))}
       </div>
       {cursor && (

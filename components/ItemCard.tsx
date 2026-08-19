@@ -1,6 +1,3 @@
-'use client';
-
-import { useState } from 'react';
 import Link from 'next/link';
 import { getRarityTier, RARITY_INFO } from '@/lib/rarity';
 import { ItemThumb } from '@/components/ItemThumb';
@@ -42,7 +39,6 @@ export function ItemCard({
   size?: 'lg' | 'md' | 'sm' | 'fill';
   state?: 'default' | 'loading' | 'disabled';
 }) {
-  const [hovered, setHovered] = useState(false);
   const tier = probability !== undefined ? getRarityTier(probability) : 'common';
   const info = RARITY_INFO[tier];
 
@@ -61,55 +57,50 @@ export function ItemCard({
   }
 
   return (
-    // The card's own border needs overflow-hidden (rounded corners, clipped
-    // image) but that would also clip a tooltip popping out above it — so
-    // the tooltip lives in this unclipped relative wrapper instead, as a
-    // sibling of the clipped card body, not a child of it.
-    <div className="relative" onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
-      <div
-        className={`${CARD_WIDTH[size]} overflow-hidden rounded-md border bg-surface-card transition-transform hover:-translate-y-0.5 ${
-          state === 'disabled' ? 'opacity-40 saturate-[0.2]' : ''
-        }`}
-        style={{ borderColor: info.colorVar }}
-      >
-        <ItemThumb imageUrl={imageUrl} size={size} rarityColor={info.colorVar} />
-        <div className="flex flex-col gap-1.5 p-3">
-          <div className="truncate text-label font-semibold">{name}</div>
-          {probability !== undefined && (
-            <div className="flex items-center justify-between text-mono-num font-mono">
-              <span style={{ color: info.colorVar }}>{info.name}</span>
-              <span>{(probability * 100).toFixed(probability < 0.1 ? 1 : 0)}%</span>
-            </div>
-          )}
-        </div>
-        <div className="h-[3px]" style={{ background: info.colorVar }} />
+    <div
+      className={`flex flex-col ${CARD_WIDTH[size]} overflow-hidden rounded-md border bg-surface-card ${
+        state === 'disabled' ? 'opacity-40 saturate-[0.2]' : ''
+      }`}
+      style={{ borderColor: info.colorVar }}
+    >
+      <ItemThumb
+        imageUrl={imageUrl}
+        size={size}
+        rarityColor={info.colorVar}
+        variant="card"
+        glow={info.glow}
+        description={description}
+      />
+      <div className="flex flex-1 flex-col gap-1.5 p-3">
+        {probability !== undefined && (
+          <div className="flex items-center justify-between text-mono-num font-mono">
+            <span style={{ color: info.colorVar }}>{info.name}</span>
+            <span>{(probability * 100).toFixed(probability < 0.1 ? 1 : 0)}%</span>
+          </div>
+        )}
+        <div className="min-h-[2.5em] font-semibold leading-[1.25] text-label break-words">{name}</div>
+        {caseId && authorId && (
+          // stopPropagation — this card may be nested inside a clickable
+          // showcase-slot wrapper (open the picker on click); these links
+          // must navigate instead of triggering that.
+          <div
+            className="mt-auto flex flex-col gap-0.5 truncate border-t border-line-soft pt-2 font-mono text-[10px] text-text-dim"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {caseTitle && (
+              <Link href={`/case/${caseId}`} className="truncate hover:text-text-secondary hover:underline">
+                {caseTitle}
+              </Link>
+            )}
+            {authorName && (
+              <Link href={`/u/${authorId}`} className="truncate hover:text-text-secondary hover:underline">
+                @{authorName}
+              </Link>
+            )}
+          </div>
+        )}
       </div>
-      {caseId && authorId && (
-        // stopPropagation — this card may be nested inside a clickable
-        // showcase-slot wrapper (open the picker on click); these links
-        // must navigate instead of triggering that.
-        <div
-          className="mt-1 flex flex-col gap-0.5 truncate font-mono text-[10px] text-text-dim"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {caseTitle && (
-            <Link href={`/case/${caseId}`} className="truncate hover:text-text-secondary hover:underline">
-              {caseTitle}
-            </Link>
-          )}
-          {authorName && (
-            <Link href={`/u/${authorId}`} className="truncate hover:text-text-secondary hover:underline">
-              @{authorName}
-            </Link>
-          )}
-        </div>
-      )}
-      {hovered && description && (
-        <div className="absolute bottom-[calc(100%+8px)] left-1/2 z-10 w-48 -translate-x-1/2 rounded-md border border-gold/40 bg-surface-card p-2.5 text-center text-mono-num text-text-secondary shadow-2xl">
-          {description}
-          <span className="absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1/2 rotate-45 border-b border-r border-gold/40 bg-surface-card" />
-        </div>
-      )}
+      <div className="h-[3px]" style={{ background: info.colorVar }} />
     </div>
   );
 }

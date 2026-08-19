@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { resolveImageUrl } from '@/lib/storage';
 import { mapInventoryToDisplayItems, type InventoryRowWithItem } from '@/lib/inventory';
 import { progressForSpend } from '@/lib/xp';
+import { getRarityTier } from '@/lib/rarity';
 import { ProfileTabs } from './ProfileTabs';
 
 export default async function ProfilePage({ params }: { params: Promise<{ userId: string }> }) {
@@ -16,10 +17,11 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
 
   const { data: viewedProfile } = await supabase
     .from('profiles')
-    .select('total_spent')
+    .select('total_spent, display_name')
     .eq('user_id', userId)
     .maybeSingle();
   const { level, intoLevel, forLevel, fraction } = progressForSpend(viewedProfile?.total_spent ?? 0);
+  const ownerName = viewedProfile?.display_name ?? 'игрок';
 
   const { data: rows } = await supabase
     .from('inventory')
@@ -82,29 +84,33 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
 
   const { data: ownCases } = await supabase
     .from('cases')
-    .select('id, title, price, cover_image_path, case_items(id)')
+    .select('id, title, price, cover_image_path, created_at, case_items(id, weight)')
     .eq('user_id', userId)
     .is('deleted_at', null)
     .eq('case_items.removed', false)
     .order('created_at', { ascending: false });
 
-  const cases = (ownCases ?? []).map((c) => ({
-    id: c.id,
-    title: c.title,
-    price: c.price,
-    itemCount: c.case_items.length,
-    coverImageUrl: c.cover_image_path ? resolveImageUrl(supabase, c.cover_image_path) : null,
-  }));
+  const cases = (ownCases ?? []).map((c) => {
+    const items = c.case_items;
+    const totalWeight = items.reduce((sum, i) => sum + i.weight, 0);
+    const minWeight = items.length ? Math.min(...items.map((i) => i.weight)) : 0;
+    return {
+      id: c.id,
+      title: c.title,
+      price: c.price,
+      itemCount: items.length,
+      coverImageUrl: c.cover_image_path ? resolveImageUrl(supabase, c.cover_image_path) : null,
+      topRarity: totalWeight > 0 ? getRarityTier(minWeight / totalWeight) : ('common' as const),
+      createdAt: c.created_at,
+      authorId: userId,
+      authorName: ownerName,
+    };
+  });
 
   // A case-slot can only ever hold the owner's own case (enforced in
   // setShowcaseSlot), so ownCases already contains every case any slot's
   // caseId could point to — reuse it instead of a second query.
-  const caseDisplayById = Object.fromEntries(
-    (ownCases ?? []).map((c) => [
-      c.id,
-      { title: c.title, coverImageUrl: c.cover_image_path ? resolveImageUrl(supabase, c.cover_image_path) : null },
-    ])
-  );
+  const caseDisplayById = Object.fromEntries(cases.map((c) => [c.id, c]));
 
   return (
     <main className="w-full flex-1">

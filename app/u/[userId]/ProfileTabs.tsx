@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ShowcasePicker } from './ShowcasePicker';
 import { ItemCard } from '@/components/ItemCard';
 import { CaseCard } from '@/components/CaseCard';
+import type { RarityTier } from '@/lib/rarity';
 
 type DisplayItem = {
   inventoryId: string;
@@ -24,11 +25,15 @@ type CaseSummary = {
   price: number;
   itemCount: number;
   coverImageUrl: string | null;
+  topRarity: RarityTier;
+  createdAt: string;
+  authorId: string;
+  authorName: string;
 };
 
 type ShowcaseSlot = { inventoryId: string | null; caseId: string | null };
 
-type CaseDisplay = { title: string; coverImageUrl: string | null };
+type CaseDisplay = CaseSummary;
 
 export function ProfileTabs({
   displayName,
@@ -107,7 +112,7 @@ export function ProfileTabs({
       </nav>
 
       {tab === 'showcase' && (
-        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4">
           {slots.map((slot, i) => {
             const item = slot.inventoryId ? itemsById.get(slot.inventoryId) : null;
             const caseDisplay = slot.caseId ? caseDisplayById[slot.caseId] : null;
@@ -142,17 +147,40 @@ export function ProfileTabs({
                     size="fill"
                   />
                 ) : caseDisplay ? (
-                  <CaseCard title={caseDisplay.title} coverImageUrl={caseDisplay.coverImageUrl} badge size="fill" />
+                  <CaseCard
+                    caseId={slot.caseId!}
+                    title={caseDisplay.title}
+                    coverImageUrl={caseDisplay.coverImageUrl}
+                    itemCount={caseDisplay.itemCount}
+                    price={caseDisplay.price}
+                    topRarity={caseDisplay.topRarity}
+                    authorId={caseDisplay.authorId}
+                    authorName={caseDisplay.authorName}
+                    createdAt={caseDisplay.createdAt}
+                    size="fill"
+                    linked={false}
+                  />
                 ) : (
+                  // Same shape as a real card — a square "image" area whose
+                  // height tracks the column width, plus a body-sized
+                  // reserve below — so it's the same size as a filled card
+                  // at every breakpoint, not just when a taller sibling
+                  // happens to share its grid row.
                   <div
-                    className={`flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-md border border-dashed border-line-strong bg-inset ${
+                    className={`flex w-full flex-col overflow-hidden rounded-md border border-dashed border-line bg-inset ${
                       onClick ? 'hover:border-gold' : ''
                     }`}
                   >
-                    <span className="h-3.5 w-3.5 rotate-45 rounded-[2px] border border-line-strong" />
-                    <span className="font-mono text-caps text-text-dim">
-                      слот {String(i + 1).padStart(2, '0')}
-                    </span>
+                    <div className="flex aspect-square w-full items-center justify-center">
+                      <span className="h-3.5 w-3.5 rotate-45 rounded-[2px] border border-text-dim" />
+                    </div>
+                    <div className="flex flex-1 flex-col gap-1.5 p-3">
+                      <div className="invisible text-mono-num">&nbsp;</div>
+                      <div className="invisible min-h-[2.5em]">&nbsp;</div>
+                      <div className="mt-auto pt-2 text-center font-mono text-caps text-text-dim">
+                        слот {String(i + 1).padStart(2, '0')}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -162,7 +190,7 @@ export function ProfileTabs({
       )}
 
       {tab === 'inventory' && (
-        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4">
           {allItems.map((item) => (
             <ItemCard
               key={item.inventoryId}
@@ -183,27 +211,20 @@ export function ProfileTabs({
       {tab === 'cases' && (
         <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4">
           {cases.map((c) => (
-            <div key={c.id} className="flex flex-col gap-2">
-              <a href={`/case/${c.id}`}>
-                <CaseCard title={c.title} coverImageUrl={c.coverImageUrl} itemCount={c.itemCount} price={c.price} size="fill" />
-              </a>
-              <div className="flex gap-2">
-                {viewerIsOwner && (
-                  <a
-                    href={`/case/${c.id}/edit`}
-                    className="flex h-9 flex-1 items-center justify-center rounded-md border border-line-strong px-3 font-mono text-caps uppercase text-text-secondary hover:border-gold hover:text-gold"
-                  >
-                    изменить
-                  </a>
-                )}
-                <a
-                  href={`/case/${c.id}`}
-                  className="flex h-9 flex-1 items-center justify-center rounded-md border border-gold px-3 font-mono text-caps uppercase text-gold hover:bg-gold/10"
-                >
-                  открыть
-                </a>
-              </div>
-            </div>
+            <CaseCard
+              key={c.id}
+              caseId={c.id}
+              title={c.title}
+              coverImageUrl={c.coverImageUrl}
+              itemCount={c.itemCount}
+              price={c.price}
+              topRarity={c.topRarity}
+              authorId={c.authorId}
+              authorName={c.authorName}
+              createdAt={c.createdAt}
+              size="fill"
+              editable={viewerIsOwner}
+            />
           ))}
           {cases.length === 0 && (
             <p className="font-mono text-caps text-text-muted">Кейсов пока нет.</p>
