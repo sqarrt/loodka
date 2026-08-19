@@ -59,6 +59,13 @@
   --text-caps--line-height: 14px;
 }
 
+html {
+  /* Reserve the scrollbar's width always, so content whose height varies
+     (e.g. switching tabs) doesn't jump horizontally when the scrollbar
+     appears or disappears. */
+  scrollbar-gutter: stable;
+}
+
 html,
 body {
   background: var(--color-bg);
@@ -89,6 +96,17 @@ body {
 
   button:disabled {
     cursor: not-allowed;
+  }
+
+  /* Plain numeric input everywhere — no spinner arrows to click. */
+  input[type='number'] {
+    appearance: textfield;
+  }
+
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    appearance: none;
+    margin: 0;
   }
 }
 

@@ -34,6 +34,7 @@ describe('create_case_with_items (data layer)', () => {
       p_title: 'My Case',
       p_price: 10,
       p_items: items,
+      p_cover_image_path: `${userId}/cover.png`,
     });
 
     expect(error).toBeNull();
@@ -61,6 +62,7 @@ describe('create_case_with_items (data layer)', () => {
       p_title: 'Bad Case',
       p_price: 0,
       p_items: [],
+      p_cover_image_path: `${userId}/cover.png`,
     });
 
     expect(error).not.toBeNull();

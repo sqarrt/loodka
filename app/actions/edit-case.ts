@@ -16,6 +16,7 @@ type EditItemInput = {
   weight: number;
   removed: boolean;
   imageIndex: number | null;
+  description: string | null;
 };
 
 export async function updateCase(
@@ -57,7 +58,13 @@ export async function updateCase(
   const itemsWithImages = [];
   for (const item of items) {
     if (item.id) {
-      itemsWithImages.push({ id: item.id, name: item.name, weight: item.weight, removed: item.removed });
+      itemsWithImages.push({
+        id: item.id,
+        name: item.name,
+        weight: item.weight,
+        removed: item.removed,
+        description: item.description,
+      });
     } else {
       if (item.imageIndex === null || !newImages[item.imageIndex]) {
         return { error: 'Для каждого нового предмета нужна картинка.' };
@@ -68,8 +75,15 @@ export async function updateCase(
         name: item.name,
         weight: item.weight,
         image_path: imagePath,
+        description: item.description,
       });
     }
+  }
+
+  const coverFile = formData.get('coverImage');
+  let coverPath: string | null = null;
+  if (coverFile instanceof File && coverFile.size > 0) {
+    coverPath = await uploadItemImage(supabase, user.id, coverFile);
   }
 
   const { error } = await supabase.rpc('update_case_with_items', {
@@ -77,6 +91,7 @@ export async function updateCase(
     p_title: title,
     p_price: price,
     p_items: itemsWithImages,
+    p_cover_image_path: coverPath,
   });
 
   if (error) return { error: ERROR_MESSAGES[error.message] ?? error.message };

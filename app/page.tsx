@@ -22,7 +22,7 @@ export default async function HomePage({
   } = await supabase.auth.getUser();
 
   const sp = await searchParams;
-  const { sort, dir, explicit: sortExplicit } = resolveSort(sp.sort, sp.dir);
+  const { sort, dir } = resolveSort(sp.sort, sp.dir);
   const priceMin = sp.priceMin ? Number(sp.priceMin) : undefined;
   const priceMax = sp.priceMax ? Number(sp.priceMax) : undefined;
   const filters = { title: sp.title, author: sp.author, priceMin, priceMax, sort, dir };
@@ -56,9 +56,13 @@ export default async function HomePage({
           priceMax={priceMax}
           sort={sort}
           dir={dir}
-          sortExplicit={sortExplicit}
         />
-        <CatalogGrid initialCases={cases} initialCursor={nextCursor} filters={filters} />
+        <CatalogGrid
+          key={JSON.stringify(filters)}
+          initialCases={cases}
+          initialCursor={nextCursor}
+          filters={filters}
+        />
       </div>
     </main>
   );

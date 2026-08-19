@@ -3,6 +3,7 @@ export type CaseItem = {
   name: string;
   image_path: string;
   weight: number;
+  description: string | null;
 };
 
 export type CaseItemWithOdds = CaseItem & { probability: number };

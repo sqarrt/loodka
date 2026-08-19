@@ -1,9 +1,9 @@
 'use client';
 
-import { useActionState, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useActionState, useMemo, useState, useTransition, type ChangeEvent, type FormEvent } from 'react';
 import { updateCase, deleteCase } from '@/app/actions/edit-case';
-import { Button } from '@/components/Button';
 import { CurrencyIcon } from '@/components/CurrencyIcon';
+import { ItemThumb } from '@/components/ItemThumb';
 import { getRarityTier, RARITY_INFO } from '@/lib/rarity';
 
 type InitialItem = {
@@ -11,6 +11,7 @@ type InitialItem = {
   name: string;
   weight: number;
   removed: boolean;
+  description: string | null;
   imageUrl: string;
 };
 
@@ -20,6 +21,7 @@ type EditableItem = {
   name: string;
   weight: number;
   removed: boolean;
+  description: string | null;
   imageUrl: string;
   file: File | null;
 };
@@ -42,6 +44,7 @@ export function CaseEditForm({
   earned,
   createdAt,
   initialItems,
+  coverImageUrl,
 }: {
   caseId: string;
   title: string;
@@ -50,27 +53,21 @@ export function CaseEditForm({
   earned: number;
   createdAt: string;
   initialItems: InitialItem[];
+  coverImageUrl: string | null;
 }) {
   const [title, setTitle] = useState(initialTitle);
   const [price, setPrice] = useState(initialPrice);
   const [items, setItems] = useState<EditableItem[]>(
     initialItems.map((item) => ({ ...item, key: item.id, file: null }))
   );
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(coverImageUrl);
   const [state, formAction, isPending] = useActionState(updateCase.bind(null, caseId), null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
 
   const odds = useMemo(() => probabilities(items), [items]);
   const created = new Date(createdAt).toLocaleDateString('ru-RU');
-
-  const changedCount =
-    (title !== initialTitle ? 1 : 0) +
-    (price !== initialPrice ? 1 : 0) +
-    items.filter((item) => {
-      const original = initialItems.find((o) => o.id === item.id);
-      if (item.id === null) return true;
-      if (!original) return true;
-      return original.name !== item.name || original.weight !== item.weight || original.removed !== item.removed;
-    }).length;
 
   const updateItem = (key: string, patch: Partial<EditableItem>) => {
     setItems((prev) => prev.map((item) => (item.key === key ? { ...item, ...patch } : item)));
@@ -89,7 +86,16 @@ export function CaseEditForm({
   const addItem = () => {
     setItems((prev) => [
       ...prev,
-      { key: crypto.randomUUID(), id: null, name: '', weight: 1, removed: false, imageUrl: '', file: null },
+      {
+        key: crypto.randomUUID(),
+        id: null,
+        name: '',
+        weight: 1,
+        removed: false,
+        description: null,
+        imageUrl: '',
+        file: null,
+      },
     ]);
   };
 
@@ -99,10 +105,11 @@ export function CaseEditForm({
     updateItem(key, { file, imageUrl: URL.createObjectURL(file) });
   };
 
-  const handleReset = () => {
-    setTitle(initialTitle);
-    setPrice(initialPrice);
-    setItems(initialItems.map((item) => ({ ...item, key: item.id, file: null })));
+  const handleCoverChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCoverFile(file);
+    setCoverPreview(URL.createObjectURL(file));
   };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -114,15 +121,30 @@ export function CaseEditForm({
     const newFiles: File[] = [];
     const payload = items.map((item) => {
       if (item.id) {
-        return { id: item.id, name: item.name, weight: item.weight, removed: item.removed, imageIndex: null };
+        return {
+          id: item.id,
+          name: item.name,
+          weight: item.weight,
+          removed: item.removed,
+          description: item.description,
+          imageIndex: null,
+        };
       }
       const imageIndex = item.file ? newFiles.push(item.file) - 1 : null;
-      return { id: null, name: item.name, weight: item.weight, removed: false, imageIndex };
+      return {
+        id: null,
+        name: item.name,
+        weight: item.weight,
+        removed: false,
+        description: item.description,
+        imageIndex,
+      };
     });
     fd.set('items', JSON.stringify(payload));
     newFiles.forEach((file) => fd.append('newItemImage', file));
+    if (coverFile) fd.set('coverImage', coverFile);
 
-    formAction(fd);
+    startTransition(() => formAction(fd));
   };
 
   const handleDelete = async () => {
@@ -189,6 +211,24 @@ export function CaseEditForm({
           </label>
         </div>
 
+        <label className="flex flex-col gap-2">
+          <span className="font-mono text-caps uppercase text-text-muted">обложка кейса</span>
+          <label className="relative flex h-[110px] w-[220px] cursor-pointer items-center justify-center overflow-hidden rounded-md border border-dashed border-line-strong bg-inset text-center font-mono text-[10px] text-text-dim hover:border-gold hover:text-gold">
+            {coverPreview ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={coverPreview} alt="" className="h-full w-full object-cover" />
+            ) : (
+              'загрузить обложку'
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleCoverChange}
+              className="absolute inset-0 cursor-pointer opacity-0"
+            />
+          </label>
+        </label>
+
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <span className="font-mono text-caps uppercase text-text-muted">
@@ -211,12 +251,9 @@ export function CaseEditForm({
                     item.removed ? 'border-danger/30 bg-danger/5 opacity-75' : 'border-line bg-surface-card'
                   }`}
                 >
-                  <div className="flex h-[62px] w-[84px] shrink-0 items-center justify-center overflow-hidden rounded-md border border-line-strong bg-inset">
-                    {item.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={item.imageUrl} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <label className="relative flex h-full w-full cursor-pointer items-center justify-center text-center font-mono text-[9px] leading-tight text-text-dim hover:text-gold">
+                  <ItemThumb imageUrl={item.imageUrl} size="xs">
+                    {!item.imageUrl && (
+                      <label className="absolute inset-0 flex cursor-pointer items-center justify-center text-center font-mono text-[9px] leading-tight text-text-dim hover:text-gold">
                         фото
                         <input
                           type="file"
@@ -227,7 +264,7 @@ export function CaseEditForm({
                         />
                       </label>
                     )}
-                  </div>
+                  </ItemThumb>
 
                   {item.removed ? (
                     <span className="text-body text-text-muted line-through">{item.name}</span>
@@ -238,6 +275,16 @@ export function CaseEditForm({
                       placeholder="Название предмета"
                       required
                       className={inputClass}
+                    />
+                  )}
+
+                  {!item.removed && (
+                    <textarea
+                      value={item.description ?? ''}
+                      onChange={(e) => updateItem(item.key, { description: e.target.value || null })}
+                      placeholder="Описание (необязательно)"
+                      rows={1}
+                      className={`${inputClass} h-auto resize-none py-2.5 sm:col-span-full`}
                     />
                   )}
 
@@ -321,22 +368,17 @@ export function CaseEditForm({
           </p>
         )}
 
-        <div className="sticky bottom-4 flex flex-col items-center justify-between gap-3 rounded-lg border border-gold bg-surface-raised p-4 shadow-2xl sm:flex-row">
-          <span className="font-mono text-caps text-gold">
-            {changedCount > 0 ? `${changedCount} несохранённых изменения` : 'изменений нет'}
-          </span>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={handleReset}
-              className="flex h-11 items-center rounded-md border border-line-strong px-5 font-mono text-caps uppercase text-text-secondary hover:text-text-primary"
-            >
-              Отменить
-            </button>
-            <Button type="submit" variant={isPending ? 'loading' : 'cta'} className="h-11 px-6 text-body">
-              {isPending ? 'Сохраняем…' : 'Сохранить'}
-            </Button>
-          </div>
+        <div className="flex justify-end border-t border-line-soft pt-5">
+          <button
+            type="submit"
+            disabled={isPending}
+            className="relative flex h-12 items-center overflow-hidden rounded-md bg-gold px-8 font-display text-label uppercase text-bg hover:bg-gold-hover disabled:cursor-wait"
+          >
+            {isPending && (
+              <span className="absolute inset-0 w-[45%] animate-[lk-sheen_1.1s_linear_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+            )}
+            <span className="relative">{isPending ? 'Сохраняем…' : 'Сохранить'}</span>
+          </button>
         </div>
       </form>
 

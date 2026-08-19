@@ -20,13 +20,20 @@ export default async function CasePage({
 
   const { data: caseRow } = await supabase
     .from('cases')
-    .select('id, title, price, user_id, deleted_at, case_items(id, name, image_path, weight)')
+    .select('id, title, price, user_id, deleted_at, case_items(id, name, image_path, weight, description)')
     .eq('id', id)
     .eq('case_items.removed', false)
     .order('position', { referencedTable: 'case_items' })
     .maybeSingle();
 
   if (!caseRow || caseRow.deleted_at) notFound();
+
+  const { data: authorProfile } = await supabase
+    .from('profiles')
+    .select('display_name')
+    .eq('user_id', caseRow.user_id)
+    .maybeSingle();
+  const authorName = authorProfile?.display_name ?? 'игрок';
 
   const {
     data: { user },
@@ -65,6 +72,9 @@ export default async function CasePage({
           <h1 className="font-display text-display-xl uppercase leading-none">
             {caseRow.title}
           </h1>
+          <a href={`/u/${caseRow.user_id}`} className="w-fit font-mono text-caps text-text-secondary hover:text-gold">
+            @{authorName}
+          </a>
         </div>
         <div className="flex flex-col items-end gap-1">
           <span className="font-mono text-caps uppercase text-text-muted">
@@ -98,6 +108,7 @@ export default async function CasePage({
               name={item.name}
               imageUrl={item.imageUrl}
               probability={item.probability}
+              description={item.description}
               size="lg"
             />
           ))}

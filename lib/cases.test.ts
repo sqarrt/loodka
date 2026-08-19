@@ -9,9 +9,9 @@ import {
 } from './cases';
 
 const items = [
-  { id: 'a', name: 'A', image_path: 'a.png', weight: 1 },
-  { id: 'b', name: 'B', image_path: 'b.png', weight: 1 },
-  { id: 'c', name: 'C', image_path: 'c.png', weight: 2 },
+  { id: 'a', name: 'A', image_path: 'a.png', weight: 1, description: null },
+  { id: 'b', name: 'B', image_path: 'b.png', weight: 1, description: null },
+  { id: 'c', name: 'C', image_path: 'c.png', weight: 2, description: null },
 ];
 
 describe('computeOdds', () => {

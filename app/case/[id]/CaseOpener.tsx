@@ -12,6 +12,7 @@ import {
 } from '@/lib/cases';
 import { openCaseForReal } from '@/app/actions/open-case-for-real';
 import { ItemCard } from '@/components/ItemCard';
+import { ItemThumb } from '@/components/ItemThumb';
 import { Button } from '@/components/Button';
 import { CurrencyIcon } from '@/components/CurrencyIcon';
 
@@ -21,6 +22,7 @@ type ItemWithImage = {
   imageUrl: string;
   weight: number;
   probability: number;
+  description: string | null;
 };
 
 const SPIN_DURATION_MS = 6200;
@@ -163,7 +165,7 @@ export function CaseOpener({
         <div className="absolute inset-y-0 left-1/2 z-4 w-0.5 -translate-x-1/2 bg-gold shadow-[0_0_16px_2px_rgba(245,197,66,0.53)]" />
         <div className="absolute -top-[5px] left-1/2 z-5 h-[11px] w-[11px] -translate-x-1/2 rotate-45 rounded-[2px] bg-gold" />
         <div className="absolute -bottom-[5px] left-1/2 z-5 h-[11px] w-[11px] -translate-x-1/2 rotate-45 rounded-[2px] bg-gold" />
-        <div className="relative h-[150px]">
+        <div className="relative h-[180px]">
           <div
             className="absolute left-1/2 top-0 flex gap-3 will-change-transform"
             style={{
@@ -174,7 +176,7 @@ export function CaseOpener({
             }}
           >
             {strip.map((item, i) => (
-              <ItemCard key={i} name={item.name} imageUrl={item.imageUrl} size="sm" />
+              <ItemThumb key={i} imageUrl={item.imageUrl} description={item.description} size="sm" />
             ))}
           </div>
         </div>
@@ -236,7 +238,10 @@ export function CaseOpener({
             <span className="font-display text-display-lg uppercase leading-none">
               {result.name}
             </span>
-            <span className="text-body text-text-secondary">
+            {result.description && (
+              <p className="text-body text-text-secondary">{result.description}</p>
+            )}
+            <span className="mt-1.5 font-mono text-caps text-text-dim">
               {resultIsPranked
                 ? `Тебя разыграл ${prankState?.by || 'друг'}! Предмет не сохранится в инвентаре. Можешь открыть ещё раз — уже по-настоящему.`
                 : canOpenReal
