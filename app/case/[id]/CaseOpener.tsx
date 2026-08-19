@@ -11,6 +11,7 @@ import {
   CARD_WIDTH_PX,
 } from '@/lib/cases';
 import { openCaseForReal } from '@/app/actions/open-case-for-real';
+import { cashBackItem } from '@/app/actions/cash-back-item';
 import { ItemCard } from '@/components/ItemCard';
 import { ItemThumb } from '@/components/ItemThumb';
 import { Button } from '@/components/Button';
@@ -66,6 +67,12 @@ export function CaseOpener({
   const [pranked, setPranked] = useState(!!prankState);
   const [resultIsPranked, setResultIsPranked] = useState(false);
 
+  // Only set for a real (non-demo, non-pranked) win — that's the one case
+  // where the item actually landed in the inventory and can be sold back.
+  const [saleInfo, setSaleInfo] = useState<{ inventoryId: string; cashbackValue: number } | null>(null);
+  const [selling, setSelling] = useState(false);
+  const [sold, setSold] = useState(false);
+
   // Mask the link immediately on load, not just after it's opened — a
   // pranked link should look like any other case link at a glance.
   useEffect(() => {
@@ -87,6 +94,8 @@ export function CaseOpener({
     // browser animates the reset itself instead of the spin (only visible
     // from the 2nd spin on, once offset/phase are no longer both at rest).
     setResult(null);
+    setSaleInfo(null);
+    setSold(false);
     setStrip(reel);
     setTransitioning(false);
     setOffset(0);
@@ -149,7 +158,28 @@ export function CaseOpener({
     const winner = items.find((item) => item.id === response.itemId);
     setBalance(response.newBalance ?? balance);
     router.refresh();
-    if (winner) animateTo(winner);
+    if (winner) {
+      // response.itemId matched an item here, so we're necessarily in the
+      // success branch (the error branch never sets itemId) — TS just
+      // can't prove that itself from the loose `{error?}` return shape.
+      animateTo(winner);
+      setSaleInfo({ inventoryId: response.inventoryId!, cashbackValue: response.cashbackValue! });
+    }
+  };
+
+  const handleSell = async () => {
+    if (!saleInfo) return;
+    setSelling(true);
+    const response = await cashBackItem(saleInfo.inventoryId);
+    setSelling(false);
+
+    if (response.error) {
+      setError(response.error);
+      return;
+    }
+
+    setBalance((b) => (b ?? 0) + (response.creditedAmount ?? 0));
+    setSold(true);
   };
 
   const insufficientFunds = canOpenReal && (balance ?? 0) < price;
@@ -248,6 +278,26 @@ export function CaseOpener({
                   ? 'Предмет уже в инвентаре. Можно поставить на витрину или обменять на лудки.'
                   : 'Демо-открытие — лудки не списаны, предмет не добавлен в инвентарь.'}
             </span>
+            {saleInfo && !sold && (
+              <button
+                onClick={handleSell}
+                disabled={selling}
+                className="mt-2 flex h-11 w-fit items-center gap-2 whitespace-nowrap rounded-md border border-[#2E4A3E] bg-[#122019] px-4 font-mono text-label font-bold text-success hover:border-success hover:bg-[#16281F] disabled:opacity-50"
+              >
+                {selling ? (
+                  'Продаём…'
+                ) : (
+                  <>
+                    Продать за <CurrencyIcon size={11} /> {saleInfo.cashbackValue}
+                  </>
+                )}
+              </button>
+            )}
+            {sold && (
+              <span className="mt-2 font-mono text-caps text-success">
+                Продано за {saleInfo?.cashbackValue} лудок
+              </span>
+            )}
           </div>
         </div>
       )}
