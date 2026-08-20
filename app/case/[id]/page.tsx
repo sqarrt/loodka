@@ -30,7 +30,7 @@ export default async function CasePage({
   if (!caseRow || caseRow.deleted_at) notFound();
 
   const { data: authorProfile } = await supabase
-    .from('profiles')
+    .from('profile_names')
     .select('display_name')
     .eq('user_id', caseRow.user_id)
     .maybeSingle();

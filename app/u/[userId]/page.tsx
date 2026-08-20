@@ -23,7 +23,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
     { data: ownCases },
   ] = await Promise.all([
     supabase.auth.getUser(),
-    supabase.from('profiles').select('total_spent, display_name').eq('user_id', userId).maybeSingle(),
+    supabase.from('profile_names').select('total_spent, display_name').eq('user_id', userId).maybeSingle(),
     supabase
       .from('inventory')
       .select('id, cashback_value, obtained_at, case_items(name, image_path, description, weight, case_id)')
@@ -67,7 +67,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
 
   const itemAuthorIds = [...new Set((itemCaseRows ?? []).map((c) => c.user_id))];
   const { data: itemAuthorProfiles } = itemAuthorIds.length
-    ? await supabase.from('profiles').select('user_id, display_name').in('user_id', itemAuthorIds)
+    ? await supabase.from('profile_names').select('user_id, display_name').in('user_id', itemAuthorIds)
     : { data: [] };
   const itemAuthorNameById = new Map((itemAuthorProfiles ?? []).map((p) => [p.user_id, p.display_name]));
 
