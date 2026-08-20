@@ -10,10 +10,16 @@ export function CatalogGrid({
   initialCases,
   initialCursor,
   filters,
+  linked = true,
+  showEmptyState = true,
 }: {
   initialCases: CatalogCase[];
   initialCursor: string | null;
   filters: CatalogFilters;
+  /** false for the guest homepage catalog — cards are a preview, not a place to click into. */
+  linked?: boolean;
+  /** false for the guest homepage catalog — there's no filter state to have produced an empty result. */
+  showEmptyState?: boolean;
 }) {
   const [cases, setCases] = useState(initialCases);
   const [cursor, setCursor] = useState(initialCursor);
@@ -44,6 +50,7 @@ export function CatalogGrid({
   }, [cursor, filters]);
 
   if (cases.length === 0) {
+    if (!showEmptyState) return null;
     return (
       <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-line-strong bg-inset p-9 text-center">
         <span className="h-4 w-4 rotate-45 rounded-[2px] border border-line-strong" />
@@ -74,6 +81,7 @@ export function CatalogGrid({
             authorName={c.authorName}
             createdAt={c.createdAt}
             size="fill"
+            linked={linked}
           />
         ))}
       </div>

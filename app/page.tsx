@@ -25,7 +25,11 @@ export default async function HomePage({
   const { sort, dir } = resolveSort(sp.sort, sp.dir);
   const priceMin = sp.priceMin ? Number(sp.priceMin) : undefined;
   const priceMax = sp.priceMax ? Number(sp.priceMax) : undefined;
-  const filters = { title: sp.title, author: sp.author, priceMin, priceMax, sort, dir };
+  // Signed-out visitors get the plain "popular cases" catalog regardless of
+  // the query string — filters are a logged-in feature, not just a hidden UI.
+  const filters = user
+    ? { title: sp.title, author: sp.author, priceMin, priceMax, sort, dir }
+    : resolveSort(undefined, undefined);
 
   const { cases, nextCursor } = await fetchCatalogPage(supabase, filters, null);
 
@@ -48,22 +52,32 @@ export default async function HomePage({
         </div>
       )}
 
-      <div className="flex flex-col gap-5">
-        <CatalogFilters
-          title={sp.title}
-          author={sp.author}
-          priceMin={priceMin}
-          priceMax={priceMax}
-          sort={sort}
-          dir={dir}
-        />
+      {user ? (
+        <div className="flex flex-col gap-5">
+          <CatalogFilters
+            title={sp.title}
+            author={sp.author}
+            priceMin={priceMin}
+            priceMax={priceMax}
+            sort={sort}
+            dir={dir}
+          />
+          <CatalogGrid
+            key={JSON.stringify(filters)}
+            initialCases={cases}
+            initialCursor={nextCursor}
+            filters={filters}
+          />
+        </div>
+      ) : (
         <CatalogGrid
-          key={JSON.stringify(filters)}
           initialCases={cases}
           initialCursor={nextCursor}
           filters={filters}
+          linked={false}
+          showEmptyState={false}
         />
-      </div>
+      )}
     </main>
   );
 }
