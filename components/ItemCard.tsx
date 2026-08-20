@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { getRarityTier, RARITY_INFO } from '@/lib/rarity';
+import { formatLudki } from '@/lib/currency';
 import { ItemThumb } from '@/components/ItemThumb';
+import { CurrencyIcon } from '@/components/CurrencyIcon';
 
 const CARD_WIDTH = {
   lg: 'w-44', // 176px
@@ -25,6 +27,9 @@ export function ItemCard({
   caseTitle,
   authorId,
   authorName,
+  cashbackValue,
+  onSell,
+  selling = false,
   size = 'md',
   state = 'default',
 }: {
@@ -36,6 +41,13 @@ export function ItemCard({
   caseTitle?: string | null;
   authorId?: string | null;
   authorName?: string | null;
+  /** What this item would sell for — only meaningful for something actually
+   * sitting in someone's inventory, so most callers leave it unset. */
+  cashbackValue?: number;
+  /** Renders a sell button when given. Pass alongside cashbackValue, and
+   * only from the owner's own inventory view. */
+  onSell?: () => void;
+  selling?: boolean;
   size?: 'lg' | 'md' | 'sm' | 'fill';
   state?: 'default' | 'loading' | 'disabled';
 }) {
@@ -79,23 +91,45 @@ export function ItemCard({
           </div>
         )}
         <div className="min-h-[2.5em] font-semibold leading-[1.25] text-label break-words">{name}</div>
-        {caseId && authorId && (
+        {(cashbackValue !== undefined || (caseId && authorId)) && (
           // stopPropagation — this card may be nested inside a clickable
           // showcase-slot wrapper (open the picker on click); these links
-          // must navigate instead of triggering that.
+          // must navigate instead of triggering that. Single row, not a
+          // stack — a sell button here must not grow the card taller than
+          // every other card in the same grid.
           <div
-            className="mt-auto flex flex-col gap-0.5 truncate border-t border-line-soft pt-2 font-mono text-[10px] text-text-dim"
+            className="mt-auto flex items-center justify-between gap-2 border-t border-line-soft pt-2 font-mono text-[10px] text-text-dim"
             onClick={(e) => e.stopPropagation()}
           >
-            {caseTitle && (
-              <Link href={`/case/${caseId}`} className="truncate hover:text-text-secondary hover:underline">
-                {caseTitle}
-              </Link>
+            {caseId && authorId && (
+              <div className="flex min-w-0 flex-col gap-0.5 truncate">
+                {caseTitle && (
+                  <Link href={`/case/${caseId}`} className="truncate hover:text-text-secondary hover:underline">
+                    {caseTitle}
+                  </Link>
+                )}
+                {authorName && (
+                  <Link href={`/u/${authorId}`} className="truncate hover:text-text-secondary hover:underline">
+                    @{authorName}
+                  </Link>
+                )}
+              </div>
             )}
-            {authorName && (
-              <Link href={`/u/${authorId}`} className="truncate hover:text-text-secondary hover:underline">
-                @{authorName}
-              </Link>
+            {cashbackValue !== undefined && onSell && (
+              <button
+                type="button"
+                onClick={onSell}
+                disabled={selling}
+                className="flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-md border border-[#2E4A3E] bg-[#122019] px-2 font-mono text-[10px] font-bold uppercase text-success hover:border-success hover:bg-[#16281F] disabled:opacity-50"
+              >
+                {selling ? (
+                  'продаём…'
+                ) : (
+                  <>
+                    продать за {formatLudki(cashbackValue)} <CurrencyIcon size={9} />
+                  </>
+                )}
+              </button>
             )}
           </div>
         )}

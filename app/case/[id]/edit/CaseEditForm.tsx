@@ -5,6 +5,7 @@ import { updateCase, deleteCase } from '@/app/actions/edit-case';
 import { CurrencyIcon } from '@/components/CurrencyIcon';
 import { ItemThumb } from '@/components/ItemThumb';
 import { getRarityTier, RARITY_INFO } from '@/lib/rarity';
+import { formatLudki } from '@/lib/currency';
 
 type InitialItem = {
   id: string;
@@ -170,7 +171,7 @@ export function CaseEditForm({
           <div className="flex flex-col items-end gap-1">
             <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-text-muted">заработано</span>
             <span className="flex items-center gap-2 font-mono text-heading font-bold">
-              <CurrencyIcon size={15} /> {earned}
+              <CurrencyIcon size={15} /> {formatLudki(earned)}
             </span>
           </div>
         </div>
@@ -202,6 +203,7 @@ export function CaseEditForm({
               <input
                 type="number"
                 min={1}
+                step={0.01}
                 value={price}
                 onChange={(e) => setPrice(Number(e.target.value))}
                 required

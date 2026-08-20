@@ -18,7 +18,7 @@ export async function createCase(
   }
 
   const title = String(formData.get('title') ?? '').trim();
-  const price = Number(formData.get('price'));
+  const price = Math.round(Number(formData.get('price')) * 100) / 100;
   const names = formData.getAll('itemName').map(String);
   const weights = formData.getAll('itemWeight').map(Number);
   const descriptions = formData.getAll('itemDescription').map(String);
@@ -26,7 +26,7 @@ export async function createCase(
   const coverFile = formData.get('coverImage');
 
   if (!title) return { error: 'Укажи название кейса.' };
-  if (!Number.isInteger(price) || price < 1) return { error: 'Цена крутки должна быть целым числом от 1.' };
+  if (!Number.isFinite(price) || price < 1) return { error: 'Цена крутки должна быть не меньше 1.' };
   if (names.length < 2) return { error: 'Нужно минимум 2 предмета.' };
   if (files.length !== names.length) return { error: 'Для каждого предмета нужна картинка.' };
   if (weights.some((w) => !Number.isFinite(w) || w <= 0)) return { error: 'Вес каждого предмета должен быть больше 0.' };

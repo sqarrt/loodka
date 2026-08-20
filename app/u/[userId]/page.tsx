@@ -9,44 +9,60 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
   const { userId } = await params;
   const supabase = await createClient();
 
-  const {
-    data: { user: viewer },
-  } = await supabase.auth.getUser();
-  const viewerIsOwner = viewer?.id === userId;
+  // Five independent reads — none needs another's result — so they go out
+  // together instead of round-tripping one at a time. That matters here:
+  // this page reloads on every showcase-slot pick (router.refresh()), so a
+  // serial waterfall of 8 sequential queries was making that feel sluggish.
+  const [
+    {
+      data: { user: viewer },
+    },
+    { data: viewedProfile },
+    { data: rows },
+    { data: showcaseRows },
+    { data: ownCases },
+  ] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.from('profiles').select('total_spent, display_name').eq('user_id', userId).maybeSingle(),
+    supabase
+      .from('inventory')
+      .select('id, cashback_value, obtained_at, case_items(name, image_path, description, weight, case_id)')
+      .eq('user_id', userId)
+      .order('obtained_at', { ascending: false }),
+    supabase.from('showcase_slots').select('slot_index, inventory_id, case_id').eq('user_id', userId),
+    supabase
+      .from('cases')
+      .select('id, title, price, cover_image_path, created_at, case_items(id, weight)')
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .eq('case_items.removed', false)
+      .order('created_at', { ascending: false }),
+  ]);
 
-  const { data: viewedProfile } = await supabase
-    .from('profiles')
-    .select('total_spent, display_name')
-    .eq('user_id', userId)
-    .maybeSingle();
+  const viewerIsOwner = viewer?.id === userId;
   const { level, intoLevel, forLevel, fraction } = progressForSpend(viewedProfile?.total_spent ?? 0);
   const ownerName = viewedProfile?.display_name ?? 'игрок';
-
-  const { data: rows } = await supabase
-    .from('inventory')
-    .select('id, cashback_value, obtained_at, case_items(name, image_path, description, weight, case_id)')
-    .eq('user_id', userId)
-    .order('obtained_at', { ascending: false });
 
   const rawItems = mapInventoryToDisplayItems((rows ?? []) as unknown as InventoryRowWithItem[]);
 
   // Rarity and case/author navigation both need each item's odds within its
   // own case — that means every referenced case's *current* total active
   // weight, plus that case's title and author. Batch it all rather than
-  // querying per item.
+  // querying per item. The two queries below are independent of each other
+  // (both only need itemCaseIds), so they run together too.
   const itemCaseIds = [...new Set(rawItems.map((item) => item.caseId).filter((id): id is string => id !== null))];
 
-  const { data: siblingWeightRows } = itemCaseIds.length
-    ? await supabase.from('case_items').select('case_id, weight').in('case_id', itemCaseIds).eq('removed', false)
-    : { data: [] };
+  const [{ data: siblingWeightRows }, { data: itemCaseRows }] = itemCaseIds.length
+    ? await Promise.all([
+        supabase.from('case_items').select('case_id, weight').in('case_id', itemCaseIds).eq('removed', false),
+        supabase.from('cases').select('id, title, user_id').in('id', itemCaseIds),
+      ])
+    : [{ data: [] }, { data: [] }];
   const totalWeightByCase = new Map<string, number>();
   for (const row of siblingWeightRows ?? []) {
     totalWeightByCase.set(row.case_id, (totalWeightByCase.get(row.case_id) ?? 0) + row.weight);
   }
 
-  const { data: itemCaseRows } = itemCaseIds.length
-    ? await supabase.from('cases').select('id, title, user_id').in('id', itemCaseIds)
-    : { data: [] };
   const caseMetaById = new Map((itemCaseRows ?? []).map((c) => [c.id, c]));
 
   const itemAuthorIds = [...new Set((itemCaseRows ?? []).map((c) => c.user_id))];
@@ -68,11 +84,6 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
     };
   });
 
-  const { data: showcaseRows } = await supabase
-    .from('showcase_slots')
-    .select('slot_index, inventory_id, case_id')
-    .eq('user_id', userId);
-
   const slots: { inventoryId: string | null; caseId: string | null }[] = Array.from(
     { length: 12 },
     () => ({ inventoryId: null, caseId: null })
@@ -80,14 +91,6 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
   for (const row of showcaseRows ?? []) {
     slots[row.slot_index] = { inventoryId: row.inventory_id, caseId: row.case_id };
   }
-
-  const { data: ownCases } = await supabase
-    .from('cases')
-    .select('id, title, price, cover_image_path, created_at, case_items(id, weight)')
-    .eq('user_id', userId)
-    .is('deleted_at', null)
-    .eq('case_items.removed', false)
-    .order('created_at', { ascending: false });
 
   const cases = (ownCases ?? []).map((c) => {
     const items = c.case_items;

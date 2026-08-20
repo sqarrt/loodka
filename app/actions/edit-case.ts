@@ -32,12 +32,12 @@ export async function updateCase(
   if (!user) return { error: ERROR_MESSAGES['not authenticated'] };
 
   const title = String(formData.get('title') ?? '').trim();
-  const price = Number(formData.get('price'));
+  const price = Math.round(Number(formData.get('price')) * 100) / 100;
   const itemsRaw = String(formData.get('items') ?? '[]');
   const newImages = formData.getAll('newItemImage').filter((f): f is File => f instanceof File && f.size > 0);
 
   if (!title) return { error: 'Укажи название кейса.' };
-  if (!Number.isInteger(price) || price < 1) return { error: 'Цена крутки должна быть целым числом от 1.' };
+  if (!Number.isFinite(price) || price < 1) return { error: 'Цена крутки должна быть не меньше 1.' };
 
   let items: EditItemInput[];
   try {

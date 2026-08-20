@@ -26,6 +26,19 @@ describe('mapInventoryToDisplayItems', () => {
     ]);
   });
 
+  it('preserves a fractional cashback value', () => {
+    const rows: InventoryRowWithItem[] = [
+      {
+        id: 'inv-3',
+        cashback_value: 0.56,
+        obtained_at: '2026-08-16T00:00:00Z',
+        case_items: { name: 'Gamma', image_path: 'g.png', description: null, weight: 1, case_id: 'case-1' },
+      },
+    ];
+    const result = mapInventoryToDisplayItems(rows);
+    expect(result[0].cashbackValue).toBe(0.56);
+  });
+
   it('falls back gracefully when the joined item is missing', () => {
     const rows: InventoryRowWithItem[] = [
       {

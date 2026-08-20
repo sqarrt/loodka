@@ -15,6 +15,8 @@ import { cashBackItem } from '@/app/actions/cash-back-item';
 import { ItemThumb } from '@/components/ItemThumb';
 import { Button } from '@/components/Button';
 import { CurrencyIcon } from '@/components/CurrencyIcon';
+import { getRarityTier, RARITY_INFO } from '@/lib/rarity';
+import { formatLudki } from '@/lib/currency';
 
 type ItemWithImage = {
   id: string;
@@ -179,6 +181,7 @@ export function CaseOpener({
 
     setBalance((b) => (b ?? 0) + (response.creditedAmount ?? 0));
     setSold(true);
+    router.refresh();
   };
 
   const insufficientFunds = canOpenReal && (balance ?? 0) < price;
@@ -204,9 +207,20 @@ export function CaseOpener({
                 : 'none',
             }}
           >
-            {strip.map((item, i) => (
-              <ItemThumb key={i} imageUrl={item.imageUrl} description={item.description} size="sm" />
-            ))}
+            {strip.map((item, i) => {
+              const info = RARITY_INFO[getRarityTier(item.probability)];
+              return (
+                <ItemThumb
+                  key={i}
+                  imageUrl={item.imageUrl}
+                  description={item.description}
+                  size="sm"
+                  rarityColor={info.colorVar}
+                  glow={info.glow}
+                  thickBorder
+                />
+              );
+            })}
           </div>
         </div>
       </div>
@@ -224,12 +238,12 @@ export function CaseOpener({
               <span className="flex flex-col items-center gap-0.5 normal-case">
                 <span className="uppercase">Не хватает лудок</span>
                 <span className="font-mono text-caps normal-case">
-                  нужно ещё {price - (balance ?? 0)} · баланс {balance ?? 0}
+                  нужно ещё {formatLudki(price - (balance ?? 0))} · баланс {formatLudki(balance ?? 0)}
                 </span>
               </span>
             ) : (
               <>
-                Открыть за {price} <CurrencyIcon size={20} />
+                Открыть за {formatLudki(price)} <CurrencyIcon size={20} />
               </>
             )}
           </Button>
@@ -286,14 +300,14 @@ export function CaseOpener({
                   'Продаём…'
                 ) : (
                   <>
-                    Продать за <CurrencyIcon size={11} /> {saleInfo.cashbackValue}
+                    Продать за <CurrencyIcon size={11} /> {formatLudki(saleInfo.cashbackValue)}
                   </>
                 )}
               </button>
             )}
             {sold && (
               <span className="font-mono text-caps text-success">
-                Продано за {saleInfo?.cashbackValue} лудок
+                Продано за {formatLudki(saleInfo?.cashbackValue ?? 0)} лудок
               </span>
             )}
           </div>

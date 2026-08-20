@@ -1,20 +1,31 @@
 'use client';
 
-import { useActionState, useState, type ChangeEvent } from 'react';
+import { useActionState, useRef, useState, type ChangeEvent } from 'react';
 import { createCase } from '@/app/actions/create-case';
 import { Button } from '@/components/Button';
 import { CurrencyIcon } from '@/components/CurrencyIcon';
 import { ItemThumb } from '@/components/ItemThumb';
-
-const emptyItems = [0, 1];
 
 const inputClass =
   'h-12 rounded-md border border-line-strong bg-surface-card px-3.5 text-body outline-none focus:border-gold';
 
 export function NewCaseForm() {
   const [state, formAction] = useActionState(createCase, null);
+  const [itemKeys, setItemKeys] = useState<number[]>([0, 1]);
+  const nextKeyRef = useRef(2);
   const [previews, setPreviews] = useState<Record<number, string>>({});
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+
+  const addItem = () => setItemKeys((prev) => [...prev, nextKeyRef.current++]);
+
+  const removeItem = (key: number) => {
+    setItemKeys((prev) => prev.filter((k) => k !== key));
+    setPreviews((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
 
   const handleFileChange = (i: number) => (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -45,6 +56,7 @@ export function NewCaseForm() {
               name="price"
               type="number"
               min={1}
+              step={0.01}
               defaultValue={10}
               required
               className={`${inputClass} w-full font-mono font-bold`}
@@ -82,14 +94,14 @@ export function NewCaseForm() {
             шансы считаются из весов автоматически
           </span>
         </div>
-        {emptyItems.map((i) => (
+        {itemKeys.map((key) => (
           <div
-            key={i}
-            className="flex flex-col gap-2 rounded-lg border border-line bg-surface-card p-3 sm:grid sm:grid-cols-[84px_1fr_110px] sm:items-center"
+            key={key}
+            className="flex flex-col gap-2 rounded-lg border border-line bg-surface-card p-3 sm:grid sm:grid-cols-[84px_1fr_110px_36px] sm:items-center"
           >
             <label className="relative block h-fit w-fit shrink-0 cursor-pointer">
-              <ItemThumb imageUrl={previews[i]} size="xs">
-                {!previews[i] && (
+              <ItemThumb imageUrl={previews[key]} size="xs">
+                {!previews[key] && (
                   <span className="pointer-events-none font-mono text-[9px] leading-tight text-text-dim">
                     фото
                   </span>
@@ -100,7 +112,7 @@ export function NewCaseForm() {
                 type="file"
                 accept="image/*"
                 required
-                onChange={handleFileChange(i)}
+                onChange={handleFileChange(key)}
                 className="absolute inset-0 cursor-pointer opacity-0"
               />
             </label>
@@ -118,14 +130,30 @@ export function NewCaseForm() {
               required
               className={`${inputClass} font-mono`}
             />
+            <button
+              type="button"
+              onClick={() => removeItem(key)}
+              disabled={itemKeys.length <= 2}
+              className="flex h-9 w-9 items-center justify-center rounded-md border border-line text-text-muted hover:border-danger hover:text-danger disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              ×
+            </button>
             <textarea
               name="itemDescription"
               placeholder="Описание (необязательно)"
               rows={1}
-              className={`${inputClass} h-auto resize-none py-2.5 sm:col-span-3`}
+              className={`${inputClass} h-auto resize-none py-2.5 sm:col-span-4`}
             />
           </div>
         ))}
+
+        <button
+          type="button"
+          onClick={addItem}
+          className="flex h-12 items-center justify-center rounded-lg border border-dashed border-line-strong text-body text-text-secondary hover:border-gold hover:text-gold"
+        >
+          + добавить предмет
+        </button>
       </div>
 
       {state?.error && (

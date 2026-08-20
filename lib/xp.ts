@@ -32,5 +32,5 @@ export function progressForSpend(totalSpent: number): {
 }
 
 export function dailyBonusForLevel(level: number, baseAmount: number): number {
-  return Math.floor(baseAmount * GROWTH ** (level - 1));
+  return Math.round(baseAmount * GROWTH ** (level - 1) * 100) / 100;
 }
