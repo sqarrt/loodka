@@ -4,6 +4,7 @@ import { resolveImageUrl } from '@/lib/storage';
 import { computeOdds, type CaseItem } from '@/lib/cases';
 import { ItemCard } from '@/components/ItemCard';
 import { CurrencyIcon } from '@/components/CurrencyIcon';
+import { formatLudki } from '@/lib/currency';
 import { CaseOpener } from './CaseOpener';
 import { CasePrankButton } from './CasePrankButton';
 
@@ -82,7 +83,7 @@ export default async function CasePage({
             цена крутки
           </span>
           <span className="flex items-center gap-2 font-mono text-heading font-bold">
-            <CurrencyIcon size={15} /> {caseRow.price}
+            <CurrencyIcon size={15} /> {formatLudki(caseRow.price)}
           </span>
         </div>
       </div>

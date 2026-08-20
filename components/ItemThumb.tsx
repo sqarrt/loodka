@@ -26,6 +26,7 @@ export function ItemThumb({
   variant = 'standalone',
   glow,
   description,
+  thickBorder = false,
   children,
 }: {
   imageUrl?: string | null;
@@ -36,12 +37,14 @@ export function ItemThumb({
   glow?: number;
   /** When given, hovering (or focusing) the thumb swaps the image for this text. */
   description?: string | null;
+  /** Bolder rarity border — the reel wants it more visible at a glance. */
+  thickBorder?: boolean;
   children?: ReactNode;
 }) {
   return (
     <div
       tabIndex={description ? 0 : undefined}
-      className={`group relative isolate flex shrink-0 items-center justify-center overflow-hidden bg-surface-raised bg-[repeating-linear-gradient(135deg,var(--color-surface-raised)_0_8px,var(--color-line)_8px_16px)] outline-none ${SIZE_CLASSES[size]} ${VARIANT_CLASSES[variant]}`}
+      className={`group relative isolate flex shrink-0 items-center justify-center overflow-hidden bg-surface-raised bg-[repeating-linear-gradient(135deg,var(--color-surface-raised)_0_8px,var(--color-line)_8px_16px)] outline-none ${SIZE_CLASSES[size]} ${VARIANT_CLASSES[variant]} ${thickBorder ? '!border-2' : ''}`}
       style={variant === 'cover' ? undefined : { borderColor: rarityColor ?? 'var(--color-line)' }}
     >
       {!!glow && (

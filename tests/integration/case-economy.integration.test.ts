@@ -57,7 +57,7 @@ describe('open_case_for_real', () => {
     expect(error).toBeNull();
     const result = data![0];
     expect(items.map((i) => i.id)).toContain(result.item_id);
-    expect(result.cashback_value).toBe(5); // floor((0.5*10)/(2*0.5))
+    expect(result.cashback_value).toBe(5); // round((0.5*10)/(2*0.5), 2)
     expect(result.new_balance).toBe(90);
 
     const { data: authorProfile } = await admin
@@ -65,7 +65,7 @@ describe('open_case_for_real', () => {
       .select('balance')
       .eq('user_id', author.userId)
       .single();
-    expect(authorProfile!.balance).toBe(5); // floor(0.5*10)
+    expect(authorProfile!.balance).toBe(5); // round(0.5*10, 2)
 
     const { data: inventoryRows } = await admin
       .from('inventory')
@@ -92,9 +92,31 @@ describe('open_case_for_real', () => {
     const totalWeight = items.reduce((s, i) => s + i.weight, 0);
     const winner = items.find((i) => i.id === result.item_id)!;
     const prob = winner.weight / totalWeight;
-    const expectedCashback = Math.floor((0.5 * price) / (items.length * prob));
+    const expectedCashback = Math.max(Math.round(((0.5 * price) / (items.length * prob)) * 100) / 100, 0.01);
 
     expect(result.cashback_value).toBe(expectedCashback);
+  });
+
+  it('never sells a common item for 0 — the bug that started this migration', async () => {
+    const author = await createSignedInUser(`author-cheap-${Date.now()}@example.com`, 0);
+    const opener = await createSignedInUser(`opener-cheap-${Date.now()}@example.com`, 100);
+
+    // A cheap case where the common item's probability (0.9) is high enough
+    // that the old integer floor(cashback_share * price / (item_count *
+    // probability)) = floor(1 / 1.8) rounded down to exactly 0.
+    const { caseId, items } = await createCaseWithItems(author.userId, 'Cheap Common Test', 2, [
+      { name: 'Common', image_path: 'c.png', weight: 9 },
+      { name: 'Rare', image_path: 'r.png', weight: 1 },
+    ]);
+
+    const { data } = await opener.client.rpc('open_case_for_real', { p_case_id: caseId });
+    const result = data![0];
+    const winner = items.find((i) => i.id === result.item_id)!;
+
+    expect(result.cashback_value).toBeGreaterThan(0);
+    if (winner.name === 'Common') {
+      expect(result.cashback_value).toBe(0.56); // round((0.5*2)/(2*0.9), 2)
+    }
   });
 
   it('allows the author to open their own case for real, netting only the non-author share', async () => {

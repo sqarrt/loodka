@@ -61,7 +61,7 @@ describe('dailyBonusForLevel', () => {
   it('level 2 gets +30%', () => {
     expect(dailyBonusForLevel(2, 10)).toBe(13);
   });
-  it('level 3 gets +30% compounding, floored', () => {
-    expect(dailyBonusForLevel(3, 10)).toBe(Math.floor(10 * 1.3 * 1.3));
+  it('level 3 gets +30% compounding, rounded to 2 decimals', () => {
+    expect(dailyBonusForLevel(3, 10)).toBe(Math.round(10 * 1.3 * 1.3 * 100) / 100);
   });
 });

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CurrencyIcon } from '@/components/CurrencyIcon';
 import { progressForSpend } from '@/lib/xp';
+import { formatLudki } from '@/lib/currency';
 
 export function DailyBonusModal({ amount, totalSpent }: { amount: number; totalSpent: number }) {
   const [open, setOpen] = useState(true);
@@ -32,7 +33,7 @@ export function DailyBonusModal({ amount, totalSpent }: { amount: number; totalS
         </span>
         <div className="flex flex-col gap-1">
           <span className="font-mono text-caps uppercase text-gold">ежедневный бонус</span>
-          <span className="font-display text-heading uppercase">+{amount} лудок</span>
+          <span className="font-display text-heading uppercase">+{formatLudki(amount)} лудок</span>
         </div>
         <p className="text-body text-text-secondary">
           Заходи каждый день — бонус начисляется раз в сутки.
@@ -48,7 +49,7 @@ export function DailyBonusModal({ amount, totalSpent }: { amount: number; totalS
             />
           </div>
           <span className="self-end font-mono text-caps text-text-muted">
-            {intoLevel} / {Math.round(forLevel)}
+            {formatLudki(intoLevel)} / {Math.round(forLevel)}
           </span>
         </div>
         <button

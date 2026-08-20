@@ -259,7 +259,7 @@ export function ShowcasePicker({
                     item.inventoryId === currentInventoryId ? 'ring-2 ring-gold ring-offset-2 ring-offset-surface-card' : ''
                   }`}
                 >
-                  <ItemCard name={item.name} imageUrl={item.imageUrl} size="fill" />
+                  <ItemCard name={item.name} imageUrl={item.imageUrl} probability={item.probability} size="fill" />
                 </div>
               </button>
             ))}

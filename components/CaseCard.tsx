@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { CaseThumb } from '@/components/CaseThumb';
 import { CurrencyIcon } from '@/components/CurrencyIcon';
 import { RARITY_INFO, type RarityTier } from '@/lib/rarity';
+import { formatLudki } from '@/lib/currency';
 
 const CARD_WIDTH = {
   lg: 'w-44',
@@ -120,7 +121,7 @@ export function CaseCard({
             )}
             {price !== undefined && (
               <span className="ml-auto flex shrink-0 items-center gap-1.5 font-mono font-bold text-body text-text-primary">
-                <CurrencyIcon size={13} /> {price}
+                <CurrencyIcon size={13} /> {formatLudki(price)}
               </span>
             )}
           </div>
