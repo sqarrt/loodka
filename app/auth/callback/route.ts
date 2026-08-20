@@ -8,17 +8,6 @@ export async function GET(request: Request) {
   const next = searchParams.get('next') ?? '/';
 
   if (code) {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
-    const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
-    console.log(
-      'auth env fingerprint:',
-      JSON.stringify({
-        url,
-        anonLen: anon.length,
-        anonHead: anon.slice(0, 12),
-        anonTail: anon.slice(-12),
-      })
-    );
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
