@@ -31,7 +31,7 @@ export async function getAuthorSuggestions(query: string): Promise<Suggestion[]>
   if (!q) return [];
   const supabase = await createClient();
   const { data: profiles } = await supabase
-    .from('profiles')
+    .from('profile_names')
     .select('user_id, display_name')
     .ilike('display_name', `%${q}%`)
     .limit(6);

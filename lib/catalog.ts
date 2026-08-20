@@ -93,7 +93,7 @@ export async function fetchCatalogPage(
   let authorIds: string[] | null = null;
   if (filters.author?.trim()) {
     const { data: authorRows } = await supabase
-      .from('profiles')
+      .from('profile_names')
       .select('user_id')
       .ilike('display_name', `%${filters.author.trim()}%`);
     authorIds = (authorRows ?? []).map((r) => r.user_id);
@@ -135,7 +135,7 @@ export async function fetchCatalogPage(
 
   const authorIdsToLoad = [...new Set(page.map((row) => row.user_id))];
   const { data: authorProfiles } = authorIdsToLoad.length
-    ? await supabase.from('profiles').select('user_id, display_name').in('user_id', authorIdsToLoad)
+    ? await supabase.from('profile_names').select('user_id, display_name').in('user_id', authorIdsToLoad)
     : { data: [] };
   const authorNameById = new Map((authorProfiles ?? []).map((p) => [p.user_id, p.display_name]));
 
