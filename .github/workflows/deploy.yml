@@ -36,10 +36,13 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      # Source doesn't always change between tags (e.g. an env-var-only fix) but
-      # Vercel's remote build cache keys on source content, not env values — so
-      # a stale build gets served with the old env baked in unless we force it.
+      # Source doesn't always change between tags (e.g. an env-var-only fix), but
+      # `vercel build` restores a Turbo remote cache keyed on source content, not
+      # env values (`vercel pull` sets TURBO_CACHE=remote:rw / TURBO_REMOTE_ONLY=true)
+      # — so a stale compile gets served with the old env baked in unless forced.
+      # VERCEL_FORCE_NO_BUILD_CACHE alone doesn't reach this Turbo-level cache.
       VERCEL_FORCE_NO_BUILD_CACHE: "1"
+      TURBO_FORCE: "1"
     steps:
       - uses: actions/checkout@v4
 
