@@ -46,3 +46,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# editor / local tooling
+/.claude
+/.idea
+.zshrc
+
+# scratch / credential handoff files — never commit
+/mobile-screenshots
+/supabase.md
+/task.md
