@@ -13,7 +13,6 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
     data: { user: viewer },
   } = await supabase.auth.getUser();
   const viewerIsOwner = viewer?.id === userId;
-  const displayName = viewerIsOwner ? (viewer?.email?.split('@')[0] ?? 'игрок') : null;
 
   const { data: viewedProfile } = await supabase
     .from('profiles')
@@ -115,7 +114,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userId
   return (
     <main className="w-full flex-1">
       <ProfileTabs
-        displayName={displayName}
+        displayName={ownerName}
         level={level}
         intoLevel={intoLevel}
         forLevel={forLevel}

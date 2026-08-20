@@ -40,19 +40,20 @@ export default async function CasePage({
   } = await supabase.auth.getUser();
 
   let balance: number | null = null;
+  let displayName = 'Игрок';
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('balance')
+      .select('balance, display_name')
       .eq('user_id', user.id)
       .maybeSingle();
     balance = profile?.balance ?? 0;
+    displayName = profile?.display_name ?? 'Игрок';
   }
 
   // Self-opens are allowed too — author_share + cashback_share <= 1 makes
   // this a zero-expected-value loop, not a farming exploit.
   const canOpenReal = !!user;
-  const displayName = user?.email?.split('@')[0] ?? 'Игрок';
 
   const items = caseRow.case_items as CaseItem[];
   const itemsWithOdds = computeOdds(items).map((item) => ({
