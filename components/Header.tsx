@@ -10,16 +10,16 @@ export async function Header() {
   } = await supabase.auth.getUser();
 
   let balance: number | null = null;
+  let displayName = 'игрок';
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('balance')
+      .select('balance, display_name')
       .eq('user_id', user.id)
       .maybeSingle();
     balance = profile?.balance ?? 0;
+    displayName = profile?.display_name ?? 'игрок';
   }
-
-  const displayName = user?.email?.split('@')[0] ?? 'игрок';
 
   return (
     <header className="border-b border-line-soft">
@@ -42,26 +42,7 @@ export async function Header() {
             <div className="flex h-9 items-center gap-2 rounded-full border border-line bg-surface-card px-3 font-mono text-label font-bold">
               <CurrencyIcon size={12} /> {balance}
             </div>
-            {/* Desktop: name + "выйти" side by side, as before. */}
-            <div className="hidden items-center gap-4 sm:flex">
-              <Link
-                href={`/u/${user.id}`}
-                className="flex h-9 items-center font-mono text-caps uppercase text-text-secondary transition-colors hover:text-gold"
-              >
-                {displayName}
-              </Link>
-              <form action="/auth/signout" method="post" className="flex h-9 items-center">
-                <button className="font-mono text-caps uppercase text-text-muted transition-colors hover:text-text-primary">
-                  выйти
-                </button>
-              </form>
-            </div>
-
-            {/* Mobile: name+"выйти" are too small a target side by side —
-                one tap target opens a dropdown with both instead. */}
-            <div className="sm:hidden">
-              <UserMenu userId={user.id} displayName={displayName} />
-            </div>
+            <UserMenu userId={user.id} displayName={displayName} />
           </div>
         )}
       </div>
