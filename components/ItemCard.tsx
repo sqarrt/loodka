@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getRarityTier, RARITY_INFO } from '@/lib/rarity';
+import { getRarityTier, RARITY_INFO, formatProbabilityPercent } from '@/lib/rarity';
 import { formatLudki } from '@/lib/currency';
 import { ItemThumb } from '@/components/ItemThumb';
 import { CurrencyIcon } from '@/components/CurrencyIcon';
@@ -87,7 +87,7 @@ export function ItemCard({
         {probability !== undefined && (
           <div className="flex items-center justify-between text-mono-num font-mono">
             <span style={{ color: info.colorVar }}>{info.name}</span>
-            <span>{(probability * 100).toFixed(probability < 0.1 ? 1 : 0)}%</span>
+            <span>{formatProbabilityPercent(probability)}</span>
           </div>
         )}
         <div className="min-h-[2.5em] font-semibold leading-[1.25] text-label break-words">{name}</div>

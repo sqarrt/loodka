@@ -17,3 +17,16 @@ export function getRarityTier(probability: number): RarityTier {
   if (probability >= 0.02) return 'epic';
   return 'legend';
 }
+
+// Uses as few decimals as possible (0-3) so common items stay terse ("45%")
+// while rare ones don't collapse to a misleading "0.0%" — grows precision
+// only until the rounded value reads as nonzero, capping at 3 decimals.
+export function formatProbabilityPercent(probability: number): string {
+  const pct = probability * 100;
+  if (pct <= 0) return '0%';
+  for (let digits = 0; digits < 3; digits += 1) {
+    const rounded = pct.toFixed(digits);
+    if (Number(rounded) !== 0) return `${rounded}%`;
+  }
+  return `${pct.toFixed(3)}%`;
+}
