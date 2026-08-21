@@ -4,7 +4,7 @@ import { useActionState, useMemo, useState, useTransition, type ChangeEvent, typ
 import { updateCase, deleteCase } from '@/app/actions/edit-case';
 import { CurrencyIcon } from '@/components/CurrencyIcon';
 import { ItemThumb } from '@/components/ItemThumb';
-import { getRarityTier, RARITY_INFO } from '@/lib/rarity';
+import { getRarityTier, RARITY_INFO, formatProbabilityPercent } from '@/lib/rarity';
 import { formatLudki } from '@/lib/currency';
 
 type InitialItem = {
@@ -312,7 +312,7 @@ export function CaseEditForm({
                     <div className="flex flex-col gap-1">
                       <div className="flex justify-between font-mono text-caps" style={{ color: info.colorVar }}>
                         <span>{info.name}</span>
-                        <span className="text-text-primary">{((odds[i] || 0) * 100).toFixed(1)}%</span>
+                        <span className="text-text-primary">{formatProbabilityPercent(odds[i] || 0)}</span>
                       </div>
                       <div className="h-[5px] overflow-hidden rounded-full bg-inset">
                         <div
